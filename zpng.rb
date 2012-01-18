@@ -139,48 +139,56 @@ module ZPNG
     end
 
     def decode_pixel x
-      r = g = b = nil
-      if @BPP
-        # 8, 16 or 32 bits per pixel
-        cur = @image.imagedata[@offset+x*@BPP,@BPP]
-      else
-        # 1, 2 or 4 bits per pixel
-        cur = @image.imagedata[@offset+x*@bpp/8,(@bpp/8.0).ceil]
-        case @bpp
-        when 1; r=g=b= (cur.ord & (1<<(7-(x%8)))) == 0 ? 0 : 0xff
-        when 2
-        when 4
-        else raise "unexpected bpp #{@bpp}"
+      cur =
+        if @BPP
+          # 8, 16 or 32 bits per pixel
+          @image.imagedata[@offset+x*@BPP,@BPP]
+        else
+          # 1, 2 or 4 bits per pixel
+          @image.imagedata[@offset+x*@bpp/8,(@bpp/8.0).ceil]
         end
+
+      r = g = b = nil
+      case @bpp
+      when 1
+        r=g=b= (cur.ord & (1<<(7-(x%8)))) == 0 ? 0 : 0xff
+      when 2
+      when 4
+      when 8
+        r=g=b= cur.ord
+      when 2
+      when 16
+      when 32
+      else raise "unexpected bpp #{@bpp}"
       end
 
       case @filter
-      when FILTER_NONE
-        r ? Pixel.new(r,g,b) : Pixel.new(cur)
-      when FILTER_SUB
-        return Pixel.new(cur) if x == 0
+      when FILTER_NONE  # 0
+        Pixel.new(r,g,b)
+      when FILTER_SUB   # 1
+        return Pixel.new(r,g,b) if x == 0
         prevpixel = decode_pixel(x-1)
         Pixel.new(
-          prevpixel.r + cur[0].ord,
-          prevpixel.g + cur[1].ord,
-          prevpixel.b + cur[2].ord
+          prevpixel.r + r,
+          prevpixel.g + g,
+          prevpixel.b + b
         )
-      when FILTER_UP
-        return Pixel.new(cur) if @idx == 0
+      when FILTER_UP    # 2
+        return Pixel.new(r,g,b) if @idx == 0
         prevpixel = @image.scanlines[@idx-1][x]
         Pixel.new(
-          prevpixel.r + cur[0].ord,
-          prevpixel.g + cur[1].ord,
-          prevpixel.b + cur[2].ord
+          prevpixel.r + r,
+          prevpixel.g + g,
+          prevpixel.b + b
         )
-      when FILTER_PAETH
-        a = (x > 0)    ? decode_pixel(x-1) : Pixel.new(0,0,0)
-        b = (@idx > 0) ? @image.scanlines[@idx-1][x] : Pixel.new(0,0,0)
-        c = (x > 0 && @idx > 0) ? @image.scanlines[@idx-1][x-1] : Pixel.new(0,0,0)
+      when FILTER_PAETH # 4
+        pa = (x > 0)    ? decode_pixel(x-1) : Pixel.new(0,0,0)
+        pb = (@idx > 0) ? @image.scanlines[@idx-1][x] : Pixel.new(0,0,0)
+        pc = (x > 0 && @idx > 0) ? @image.scanlines[@idx-1][x-1] : Pixel.new(0,0,0)
         Pixel.new(
-          cur[0].ord + paeth_predictor(a.r,b.r,c.r),
-          cur[1].ord + paeth_predictor(a.g,b.g,c.g),
-          cur[2].ord + paeth_predictor(a.b,b.b,c.b)
+          r + paeth_predictor(pa.r, pb.r, pc.r),
+          g + paeth_predictor(pa.g, pb.g, pc.g),
+          b + paeth_predictor(pa.b, pb.b, pc.b)
         )
       else
         raise "invalid ScanLine filter #{@filter}"
