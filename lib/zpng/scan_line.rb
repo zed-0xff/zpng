@@ -27,10 +27,14 @@ module ZPNG
           join(", ") + ">"
     end
 
-    def to_s
+    def to_s h={}
+      white   = h[:white]   || ' '
+      black   = h[:black]   || '#'
+      unknown = h[:unknown] || '?'
+
       @image.width.times.map do |i|
         px = decode_pixel(i)
-        px.white?? ' ' : (px.black?? 'X' : '?')
+        px.white?? white : (px.black?? black : unknown)
       end.join
     end
 
@@ -70,16 +74,42 @@ module ZPNG
           decoded_bytes[x*@bpp/8, (@bpp/8.0).ceil]
         end
 
-      r = g = b = nil
+      r = g = b = a = nil
+
+      colormode = image.hdr.color
+
+      if image.hdr.palette_used?
+        idx =
+          case @bpp
+          when 1
+            # needed for palette
+            (raw.ord & (1<<(7-(x%8)))) == 0 ? 0 : 1
+          when 8
+            raw.ord
+          when 16
+            raw[0].ord
+          else raise "unexpected bpp #{@bpp}"
+          end
+
+        return image.palette[idx]
+      end
+
       case @bpp
       when 1
         r=g=b= (raw.ord & (1<<(7-(x%8)))) == 0 ? 0 : 0xff
-      when 2
-      when 4
       when 8
-        r=g=b= raw.ord
-      when 2
+        if colormode == ZPNG::Chunk::IHDR::COLOR_GRAYSCALE
+          r=g=b= raw.ord
+        else
+          raise "unexpected colormode #{colormode} for bpp #{@bpp}"
+        end
       when 16
+        if colormode == ZPNG::Chunk::IHDR::COLOR_GRAY_ALPHA
+          r=g=b= raw[0].ord
+          a = raw[1].ord
+        else
+          raise "unexpected colormode #{colormode} for bpp #{@bpp}"
+        end
       when 24
         r,g,b = raw.split('').map(&:ord)
       when 32
@@ -87,7 +117,7 @@ module ZPNG
       else raise "unexpected bpp #{@bpp}"
       end
 
-      Pixel.new(r,g,b,a)
+      Color.new(r,g,b,a)
     end
 
     def decoded_bytes
@@ -102,14 +132,14 @@ module ZPNG
           s = ''
           nbytes.times do |i|
             b0 = (i-bpp1) >= 0 ? s[i-bpp1] : nil
-            s[i] = decode_byte(i, b0)
+            s[i] = decode_byte(i, b0, bpp1)
           end
 #          print Hexdump.dump(s[0,16])
           s
         end
     end
 
-    def decode_byte x, b0
+    def decode_byte x, b0, bpp1
       raw = @image.imagedata[@offset+x]
 
       unless raw
@@ -138,7 +168,7 @@ module ZPNG
       when FILTER_PAETH # 4
         pa = (b0 && b0.ord) || 0
         pb = (@idx > 0) ? @image.scanlines[@idx-1].decoded_bytes[x].ord : 0
-        pc = (x > 0 && @idx > 0) ? @image.scanlines[@idx-1].decoded_bytes[x-1].ord : 0
+        pc = (b0 && @idx > 0) ? @image.scanlines[@idx-1].decoded_bytes[x-bpp1].ord : 0
         ((raw.ord + paeth_predictor(pa, pb, pc)) & 0xff).chr
       else
         raise "invalid ScanLine filter #{@filter}"

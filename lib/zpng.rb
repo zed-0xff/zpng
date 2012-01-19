@@ -3,7 +3,7 @@ require 'zlib'
 require 'stringio'
 require 'colorize'
 
-require 'zpng/pixel'
+require 'zpng/color'
 require 'zpng/block'
 require 'zpng/scan_line'
 require 'zpng/chunk'
@@ -31,7 +31,7 @@ if $0 == __FILE__
 #      puts l.to_s
 #    end
     puts img.to_s
-    img[1,0]= ZPNG::Pixel.new(0,0,0)
+    img[1,0]= ZPNG::Color.new(0,0,0)
     puts img.to_s
     File.open 'export.png','wb' do |f|
       f << img.export

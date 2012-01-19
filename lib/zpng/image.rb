@@ -85,8 +85,8 @@ module ZPNG
         end
     end
 
-    def to_s
-      scanlines.map(&:to_s).join("\n")
+    def to_s h={}
+      scanlines.map{ |l| l.to_s(h) }.join("\n")
     end
 
     def extract_block x,y=nil,w=nil,h=nil

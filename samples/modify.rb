@@ -9,7 +9,7 @@ puts img.to_s
 puts
 
 img.width.times do |x|
-  img[x,0] = (x % 2 == 0) ? Pixel::WHITE : Pixel::BLACK
+  img[x,0] = (x % 2 == 0) ? Color::WHITE : Color::BLACK
 end
 
 puts "[.] modified:"

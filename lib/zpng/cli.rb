@@ -1,5 +1,6 @@
 require 'zpng'
 require 'optparse'
+require 'hexdump'
 require 'pp'
 
 class ZPNG::CLI
@@ -8,7 +9,8 @@ class ZPNG::CLI
     'info'      => 'General image info',
     'chunks'    => 'Show file chunks (default)',
     'ascii'     => 'Try to display image as ASCII (works best with monochrome images)',
-    'scanlines' => 'Show scanlines info'
+    'scanlines' => 'Show scanlines info',
+    'palette'   => 'Show palette'
   }
   DEFAULT_ACTIONS = %w'info chunks'
 
@@ -77,5 +79,12 @@ class ZPNG::CLI
 
   def scanlines
     pp @img.scanlines
+  end
+
+  def palette
+    if @img.palette
+      pp @img.palette
+      Hexdump.dump @img.palette.data, :width => 6*3
+    end
   end
 end

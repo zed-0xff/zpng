@@ -8,5 +8,11 @@ require 'zpng'
 Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
 
 RSpec.configure do |config|
-  
+
 end
+
+SAMPLES_DIR = File.join(
+  File.dirname(
+    File.dirname(
+      File.expand_path(__FILE__))),
+  "samples")

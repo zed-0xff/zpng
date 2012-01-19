@@ -50,6 +50,10 @@ module ZPNG
     class IHDR < Chunk
       attr_accessor :width, :height, :depth, :color, :compression, :filter, :interlace
 
+      PALETTE_USED = 1
+      COLOR_USED   = 2
+      ALPHA_USED   = 4
+
       COLOR_GRAYSCALE  = 0  # Each pixel is a grayscale sample
       COLOR_RGB        = 2  # Each pixel is an R,G,B triple.
       COLOR_INDEXED    = 3  # Each pixel is a palette index; a PLTE chunk must appear.
@@ -80,6 +84,18 @@ module ZPNG
         SAMPLES_PER_COLOR[@color] * depth
       end
 
+      def color_used?
+        (@color & COLOR_USED) != 0
+      end
+
+      def palette_used?
+        (@color & PALETTE_USED) != 0
+      end
+
+      def alpha_used?
+        (@color & ALPHA_USED) != 0
+      end
+
       def inspect
         super.sub(/ *>$/,'') + ", " +
           (instance_variables-[:@type, :@crc, :@data, :@size]).
@@ -89,6 +105,10 @@ module ZPNG
     end
 
     class PLTE < Chunk
+      def [] idx
+        rgb = @data[idx*3,3]
+        rgb && ZPNG::Color.new(*rgb.split('').map(&:ord))
+      end
     end
 
     class IEND < Chunk
