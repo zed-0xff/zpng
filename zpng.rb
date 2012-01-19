@@ -49,7 +49,7 @@ module ZPNG
     end
 
     class IHDR < Chunk
-      attr_accessor :width, :height, :depth, :color, :compression, :filtering, :interlace
+      attr_accessor :width, :height, :depth, :color, :compression, :filter, :interlace
 
       COLOR_GRAYSCALE  = 0  # Each pixel is a grayscale sample
       COLOR_RGB        = 2  # Each pixel is an R,G,B triple.
@@ -73,7 +73,7 @@ module ZPNG
         @depth = a[2]
         @color = a[3]
         @compression = a[4]
-        @filtering = a[5]
+        @filter = a[5]
         @interlace = a[6]
       end
 
@@ -127,69 +127,96 @@ module ZPNG
     end
 
     def to_s
-      decoded.map{ |x| x.white?? ' ' : (x.black?? 'X' : '?')}.join
+      @image.width.times.map do |i|
+        px = decode_pixel(i)
+        px.white?? ' ' : (px.black?? 'X' : '?')
+      end.join
     end
 
     def [] x
-      decoded[x]
-    end
-
-    def decoded
-      @decoded ||= (0...@image.width).map{ |x| decode_pixel(x) }
+      decode_pixel(x)
     end
 
     def decode_pixel x
-      cur =
+      raw =
         if @BPP
           # 8, 16 or 32 bits per pixel
-          @image.imagedata[@offset+x*@BPP,@BPP]
+          decoded_bytes[x*@BPP, @BPP]
         else
           # 1, 2 or 4 bits per pixel
-          @image.imagedata[@offset+x*@bpp/8,(@bpp/8.0).ceil]
+          decoded_bytes[x*@bpp/8, (@bpp/8.0).ceil]
         end
 
       r = g = b = nil
       case @bpp
       when 1
-        r=g=b= (cur.ord & (1<<(7-(x%8)))) == 0 ? 0 : 0xff
+        r=g=b= (raw.ord & (1<<(7-(x%8)))) == 0 ? 0 : 0xff
       when 2
       when 4
       when 8
-        r=g=b= cur.ord
+        r=g=b= raw.ord
       when 2
       when 16
+      when 24
+        r,g,b = raw.split('').map(&:ord)
       when 32
+        r,g,b,a = raw.split('').map(&:ord)
       else raise "unexpected bpp #{@bpp}"
+      end
+
+      Pixel.new(r,g,b,a)
+    end
+
+    def decoded_bytes
+      @decoded_bytes ||=
+        begin
+          # number of bytes per complete pixel, rounding up to one
+          bpp1 = (@bpp/8.0).ceil
+
+          # bytes in one scanline
+          nbytes = (image.width*@bpp/8.0).ceil
+
+          s = ''
+          nbytes.times do |i|
+            b0 = (i-bpp1) >= 0 ? s[i-bpp1] : nil
+            s[i] = decode_byte(i, b0)
+          end
+          #print Hexdump.dump(s[0,16])
+          s
+        end
+    end
+
+    def decode_byte x, b0
+      raw = @image.imagedata[@offset+x]
+
+      unless raw
+        STDERR.puts "[!] not enough bytes at pos #{x} of scanline #@idx".red
+        raw = 0.chr
       end
 
       case @filter
       when FILTER_NONE  # 0
-        Pixel.new(r,g,b)
+        raw
+
       when FILTER_SUB   # 1
-        return Pixel.new(r,g,b) if x == 0
-        prevpixel = decode_pixel(x-1)
-        Pixel.new(
-          prevpixel.r + r,
-          prevpixel.g + g,
-          prevpixel.b + b
-        )
+        return raw if x == 0
+        ((raw.ord + b0.ord) & 0xff).chr
+
       when FILTER_UP    # 2
-        return Pixel.new(r,g,b) if @idx == 0
-        prevpixel = @image.scanlines[@idx-1][x]
-        Pixel.new(
-          prevpixel.r + r,
-          prevpixel.g + g,
-          prevpixel.b + b
-        )
+        return raw if @idx == 0
+        prev = @image.scanlines[@idx-1].decoded_bytes[x]
+        ((raw.ord + prev.ord) & 0xff).chr
+
+      when FILTER_AVERAGE # 3
+        prev = (b0 && b0.ord) || 0
+        prior = (@idx > 0) ? @image.scanlines[@idx-1].decoded_bytes[x].ord : 0
+        ((raw.ord + (prev + prior)/2) & 0xff).chr
+
       when FILTER_PAETH # 4
-        pa = (x > 0)    ? decode_pixel(x-1) : Pixel.new(0,0,0)
-        pb = (@idx > 0) ? @image.scanlines[@idx-1][x] : Pixel.new(0,0,0)
-        pc = (x > 0 && @idx > 0) ? @image.scanlines[@idx-1][x-1] : Pixel.new(0,0,0)
-        Pixel.new(
-          r + paeth_predictor(pa.r, pb.r, pc.r),
-          g + paeth_predictor(pa.g, pb.g, pc.g),
-          b + paeth_predictor(pa.b, pb.b, pc.b)
-        )
+        pa = (b0 && b0.ord) || 0
+        pb = (@idx > 0) ? @image.scanlines[@idx-1].decoded_bytes[x].ord : 0
+        pc = (x > 0 && @idx > 0) ? @image.scanlines[@idx-1].decoded_bytes[x-1].ord : 0
+        ((raw.ord + paeth_predictor(pa, pb, pc)) & 0xff).chr
       else
         raise "invalid ScanLine filter #{@filter}"
       end
@@ -322,7 +349,10 @@ if $0 == __FILE__
     #Hexdump.dump(img.imagedata, :width => 6)
     require 'pp'
     pp img.scanlines[0..5]
-    puts Hexdump.dump(img.imagedata[0,0x20], :width => 6)
+#    puts Hexdump.dump(img.imagedata[0,60])
+#    img.scanlines.each do |l|
+#      puts l.to_s
+#    end
     puts img.to_s
   end
 end
