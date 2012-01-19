@@ -181,7 +181,7 @@ module ZPNG
             b0 = (i-bpp1) >= 0 ? s[i-bpp1] : nil
             s[i] = decode_byte(i, b0)
           end
-          #print Hexdump.dump(s[0,16])
+#          print Hexdump.dump(s[0,16])
           s
         end
     end
@@ -199,7 +199,7 @@ module ZPNG
         raw
 
       when FILTER_SUB   # 1
-        return raw if x == 0
+        return raw unless b0
         ((raw.ord + b0.ord) & 0xff).chr
 
       when FILTER_UP    # 2

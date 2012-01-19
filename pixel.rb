@@ -1,11 +1,11 @@
 module ZPNG
   class Pixel < Struct.new(:r,:g,:b,:a)
     def white?
-      to_s == "FFFFFF"
+      r == 0xff && g == 0xff && b == 0xff
     end
 
     def black?
-      to_s == "000000"
+      r == 0 && g == 0 && b == 0
     end
 
     def to_s
