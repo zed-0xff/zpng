@@ -31,7 +31,7 @@ module ZPNG
     end
 
     def export_data
-      STDERR.puts "[!] Chunk::#{type} must realize 'export_data' virtual method".yellow if @size != 0
+      #STDERR.puts "[!] Chunk::#{type} must realize 'export_data' virtual method".yellow if @size != 0
       @data
     end
 
