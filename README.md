@@ -1,6 +1,7 @@
 zpng
 ======
 
+
 Description
 -----------
 A pure ruby PNG file manipulation & validation
@@ -129,6 +130,31 @@ Usage
 
     #<ZPNG::Chunk  PLTE size=    6, crc=55c2d37e >
     00000000  ff ff ff 00 00 00                                      |......|
+
+
+## Image manipulation
+
+    #!/usr/bin/env ruby
+    require 'zpng'
+    include ZPNG
+
+    img = Image.new(File.join(File.dirname(__FILE__),"http.png"))
+
+    puts "[.] original:"
+    puts img.to_s
+    puts
+
+    img.width.times do |x|
+      img[x,0] = (x % 2 == 0) ? Color::WHITE : Color::BLACK
+    end
+
+    puts "[.] modified:"
+    puts img.to_s
+
+    File.open("http-modified.png","wb") do |f|
+      f << img.export
+    end
+
 
 License
 -------
