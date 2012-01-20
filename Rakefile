@@ -49,3 +49,26 @@ task :default => :spec
 #  rdoc.rdoc_files.include('README*')
 #  rdoc.rdoc_files.include('lib/**/*.rb')
 #end
+
+desc "build readme"
+task :readme do
+  require 'erb'
+  tpl = File.read('README.md.tpl').gsub(/^%\s+(.+)/) do |x|
+    x.sub! /^%/,''
+    "<%= run(\"#{x}\") %>"
+  end
+  def run cmd
+    cmd.strip!
+    puts "[.] #{cmd} ..."
+    r = "    # #{cmd}\n\n"
+    cmd.sub! /^zpng/,"../bin/zpng"
+    lines = `#{cmd}`.sub(/\A\n+/m,'').sub(/\s+\Z/,'').split("\n")
+    lines = lines[0,25] + ['...'] if lines.size > 50
+    r << lines.map{|x| "    #{x}"}.join("\n")
+    r << "\n"
+  end
+  Dir.chdir 'samples'
+  result = ERB.new(tpl,nil,'%>').result
+  Dir.chdir '..'
+  File.open('README.md','w'){ |f| f << result }
+end
