@@ -88,6 +88,10 @@ module ZPNG
         (@color & COLOR_USED) != 0
       end
 
+      def grayscale?
+        !color_used?
+      end
+
       def palette_used?
         (@color & PALETTE_USED) != 0
       end
@@ -108,6 +112,18 @@ module ZPNG
       def [] idx
         rgb = @data[idx*3,3]
         rgb && ZPNG::Color.new(*rgb.split('').map(&:ord))
+      end
+
+      def ncolors
+        @size/3
+      end
+
+      def index color
+        ncolors.times do |i|
+          c = self[i]
+          return i if c.r == color.r && c.g == color.g && c.b == color.b
+        end
+        nil
       end
     end
 

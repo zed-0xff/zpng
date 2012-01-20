@@ -42,24 +42,50 @@ module ZPNG
       decode_pixel(x)
     end
 
-    def []= x, newpixel
+    def []= x, newcolor
       case @bpp
       when 1
-        if newpixel.white?
+        flag =
+          if image.hdr.palette_used?
+            idx = image.palette.index(newcolor)
+            raise "no color #{newcolor.inspect} in palette" unless idx
+            idx == 1
+          else
+            if newcolor.white?
+              true
+            elsif newcolor.black?
+              false
+            else
+              raise "1bpp pixel can only be WHITE or BLACK, got #{newcolor.inspect}"
+            end
+          end
+        if flag
           # turn pixel on
           decoded_bytes[x/8] = (decoded_bytes[x/8].ord | (1<<(7-(x%8)))).chr
-        elsif newpixel.black?
+        else
           # turn pixel off
           decoded_bytes[x/8] = (decoded_bytes[x/8].ord & (0xff-(1<<(7-(x%8))))).chr
-        else
-          raise "1bpp pixel can only be WHITE or BLACK, got #{newpixel.inspect}"
         end
       when 8
-        decoded_bytes[x] = ((newpixel.r + newpixel.g + newpixel.b)/3).chr
+        if image.hdr.palette_used?
+          decoded_bytes[x] = (image.palette.index(newcolor)).chr
+        else
+          decoded_bytes[x] = ((newcolor.r + newcolor.g + newcolor.b)/3).chr
+        end
+      when 16
+        if image.hdr.palette_used? && image.hdr.alpha_used?
+          decoded_bytes[x*2] = (image.palette.index(newcolor)).chr
+          decoded_bytes[x*2+1] = (newcolor.alpha || 0xff).chr
+        elsif image.hdr.grayscale? && image.hdr.alpha_used?
+          decoded_bytes[x*2] = newcolor.to_grayscale.chr
+          decoded_bytes[x*2+1] = (newcolor.alpha || 0xff).chr
+        else
+          raise "unexpected colormode #{image.hdr.inspect}"
+        end
       when 24
-        decoded_bytes[x*3,3] = [newpixel.r, newpixel.g, newpixel.b].map(&:chr).join
+        decoded_bytes[x*3,3] = [newcolor.r, newcolor.g, newcolor.b].map(&:chr).join
       when 32
-        decoded_bytes[x*4,4] = [newpixel.r, newpixel.g, newpixel.b, newpixel.a].map(&:chr).join
+        decoded_bytes[x*4,4] = [newcolor.r, newcolor.g, newcolor.b, newcolor.a].map(&:chr).join
       else raise "unsupported bpp #{@bpp}"
       end
     end
@@ -137,6 +163,11 @@ module ZPNG
 #          print Hexdump.dump(s[0,16])
           s
         end
+    end
+
+    def decode!
+      decoded_bytes
+      true
     end
 
     def decode_byte x, b0, bpp1

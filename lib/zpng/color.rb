@@ -1,8 +1,10 @@
 module ZPNG
   class Color < Struct.new(:r,:g,:b,:a)
 
-    BLACK = Color.new(0,0,0,0)
-    WHITE = Color.new(0xff,0xff,0xff,0)
+    alias :alpha :a
+
+    BLACK = Color.new(0,0,0,0xff)
+    WHITE = Color.new(0xff,0xff,0xff,0xff)
 
     def white?
       r == 0xff && g == 0xff && b == 0xff
@@ -10,6 +12,10 @@ module ZPNG
 
     def black?
       r == 0 && g == 0 && b == 0
+    end
+
+    def to_grayscale
+      (r+g+b)/3
     end
 
     def to_s

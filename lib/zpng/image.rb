@@ -71,7 +71,15 @@ module ZPNG
     end
 
     def []= x, y, newpixel
+      # we must decode all scanlines before doing any modifications
+      # or scanlines decoded AFTER modification of UPPER ones will be decoded wrong
+      _decode_all_scanlines unless @_all_scanlines_decoded
       scanlines[y][x] = newpixel
+    end
+
+    def _decode_all_scanlines
+      scanlines.each(&:decode!)
+      @_all_scanlines_decoded = true
     end
 
     def scanlines
