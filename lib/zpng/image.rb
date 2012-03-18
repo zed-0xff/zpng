@@ -26,6 +26,7 @@ module ZPNG
       @chunks = []
       while !io.eof?
         chunk = Chunk.from_stream(io)
+        chunk.idx = @chunks.size
         @chunks << chunk
         case chunk
         when Chunk::IHDR

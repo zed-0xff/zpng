@@ -1,6 +1,6 @@
 module ZPNG
   class Chunk
-    attr_accessor :size, :type, :data, :crc
+    attr_accessor :size, :type, :data, :crc, :idx
 
     def self.from_stream io
       size, type = io.read(8).unpack('Na4')
@@ -39,7 +39,7 @@ module ZPNG
       size = @size ? sprintf("%5d",@size) : sprintf("%5s","???")
       crc  = @crc  ? sprintf("%08x",@crc) : sprintf("%8s","???")
       type = @type.to_s.gsub(/[^0-9a-z]/i){ |x| sprintf("\\x%02X",x.ord) }
-      sprintf("#<ZPNG::Chunk  %4s size=%s, crc=%s >", type, size, crc)
+      sprintf "<Chunk #%02d %4s size=%s, crc=%s >", idx.to_i, type, size, crc
     end
 
     def crc_ok?
@@ -128,6 +128,26 @@ module ZPNG
     end
 
     class IEND < Chunk
+    end
+
+    class ZTXT < Chunk
+      attr_accessor :keyword, :comp_method, :text
+      def initialize *args
+        super
+        @keyword,@comp_method,@text = data.unpack('Z*Ca*')
+        if @text
+          @text = Zlib::Inflate.inflate(@text)
+        end
+      end
+      def inspect
+        super.sub(/ *>$/,'') + ", " +
+          (instance_variables-[:@type, :@crc, :@data, :@size]).
+          map do |var|
+            t = instance_variable_get(var).to_s
+            t = t[0..10] + "..." if t.size > 10
+            "#{var.to_s.tr('@','')}=#{t}"
+          end.join(", ") + ">"
+      end
     end
   end
 end

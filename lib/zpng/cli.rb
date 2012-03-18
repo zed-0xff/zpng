@@ -34,6 +34,10 @@ class ZPNG::CLI
       ACTIONS.each do |t,desc|
         opts.on *[ "-#{t[0].upcase}", "--#{t}", desc, eval("lambda{ |_| @actions << :#{t} }") ]
       end
+
+      opts.on "-E", "--extract-chunk id" do |id|
+        @actions << [:extract_chunk, id.to_i]
+      end
     end
 
     if (argv = optparser.parse(@argv)).empty?
@@ -51,12 +55,29 @@ class ZPNG::CLI
       @zpng = load_file fname
 
       @actions.each do |action|
-        self.send(action) if self.respond_to?(action)
+        if action.is_a?(Array)
+          self.send(*action) if self.respond_to?(action.first)
+        else
+          self.send(action) if self.respond_to?(action)
+        end
       end
     end
   rescue Errno::EPIPE
     # output interrupt, f.ex. when piping output to a 'head' command
     # prevents a 'Broken pipe - <STDOUT> (Errno::EPIPE)' message
+  end
+
+  def extract_chunk id
+    @img.chunks.each do |chunk|
+      if chunk.idx == id
+        case chunk
+        when ZPNG::Chunk::ZTXT
+          print chunk.text
+        else
+          print chunk.data
+        end
+      end
+    end
   end
 
   def load_file fname
