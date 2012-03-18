@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "zpng"
-  s.version = "0.0.1"
+  s.version = "0.0.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2012-01-20"
+  s.date = "2012-03-18"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["zpng"]
   s.extra_rdoc_files = [
@@ -47,7 +47,8 @@ Gem::Specification.new do |s|
     "spec/ascii_spec.rb",
     "spec/modify_spec.rb",
     "spec/spec_helper.rb",
-    "spec/zpng_spec.rb"
+    "spec/zpng_spec.rb",
+    "zpng.gemspec"
   ]
   s.homepage = "http://github.com/zed-0xff/zpng"
   s.licenses = ["MIT"]
