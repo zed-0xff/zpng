@@ -110,6 +110,8 @@ module ZPNG
           when 1
             # needed for palette
             (raw.ord & (1<<(7-(x%8)))) == 0 ? 0 : 1
+          when 4
+            x%2 == 0 ? (raw.ord&0x0f) : (raw.ord >> 4)
           when 8
             raw.ord
           when 16
