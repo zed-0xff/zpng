@@ -1,4 +1,4 @@
-zpng
+zpng    [![Build Status](https://secure.travis-ci.org/zed-0xff/zpng.png)](http://secure.travis-ci.org/zed-0xff/zpng)  [![Dependency Status](https://gemnasium.com/zed-0xff/zpng.png)](https://gemnasium.com/zed-0xff/zpng)
 ======
 
 

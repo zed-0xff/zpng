@@ -1,4 +1,4 @@
-zpng
+zpng    [![Build Status](https://secure.travis-ci.org/zed-0xff/zpng.png)](http://secure.travis-ci.org/zed-0xff/zpng)  [![Dependency Status](https://gemnasium.com/zed-0xff/zpng.png)](https://gemnasium.com/zed-0xff/zpng)
 ======
 
 
@@ -23,6 +23,7 @@ Usage
         -A, --ascii                      Try to display image as ASCII (works best with monochrome images)
         -S, --scanlines                  Show scanlines info
         -P, --palette                    Show palette
+        -E, --extract-chunk id
 
 ### Info
 
@@ -35,15 +36,15 @@ Usage
 
     # zpng --chunks qr_aux_chunks.png
 
-    [.] #<ZPNG::Chunk  IHDR size=   13, crc=36a28ef4, width=35, height=35, depth=1, color=0, compression=0, filter=0, interlace=0> CRC OK
-    [.] #<ZPNG::Chunk  gAMA size=    4, crc=0bfc6105 > CRC OK
-    [.] #<ZPNG::Chunk  sRGB size=    1, crc=aece1ce9 > CRC OK
-    [.] #<ZPNG::Chunk  cHRM size=   32, crc=9cba513c > CRC OK
-    [.] #<ZPNG::Chunk  pHYs size=    9, crc=46c96b3e > CRC OK
-    [.] #<ZPNG::Chunk  IDAT size=  213, crc=5f3f1ff9 > CRC OK
-    [.] #<ZPNG::Chunk  tEXt size=   37, crc=8d62fd1a > CRC OK
-    [.] #<ZPNG::Chunk  tEXt size=   37, crc=fc3f45a6 > CRC OK
-    [.] #<ZPNG::Chunk  IEND size=    0, crc=ae426082 > CRC OK
+    [.] <Chunk #00 IHDR size=   13, crc=36a28ef4, width=35, height=35, depth=1, color=0, compression=0, filter=0, interlace=0, idx=0> CRC OK
+    [.] <Chunk #01 gAMA size=    4, crc=0bfc6105 > CRC OK
+    [.] <Chunk #02 sRGB size=    1, crc=aece1ce9 > CRC OK
+    [.] <Chunk #03 cHRM size=   32, crc=9cba513c > CRC OK
+    [.] <Chunk #04 pHYs size=    9, crc=46c96b3e > CRC OK
+    [.] <Chunk #05 IDAT size=  213, crc=5f3f1ff9 > CRC OK
+    [.] <Chunk #06 tEXt size=   37, crc=8d62fd1a > CRC OK
+    [.] <Chunk #07 tEXt size=   37, crc=fc3f45a6 > CRC OK
+    [.] <Chunk #08 IEND size=    0, crc=ae426082 > CRC OK
 
 ### ASCII
 
@@ -130,7 +131,7 @@ source image: ![qr_rgb.png](https://github.com/zed-0xff/zpng/raw/master/samples/
 
     # zpng --palette qr_plte_bw.png
 
-    #<ZPNG::Chunk  PLTE size=    6, crc=55c2d37e >
+    <Chunk #02 PLTE size=    6, crc=55c2d37e >
     00000000  ff ff ff 00 00 00                                      |......|
 
 
