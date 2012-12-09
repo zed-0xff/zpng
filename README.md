@@ -15,15 +15,16 @@ Usage
 
     # zpng -h
 
-    Usage: zpng [options]
+    Usage: zpng [options] filename.png
+            --chunks                     Show file chunks (default)
         -v, --verbose                    Run verbosely (can be used multiple times)
         -q, --quiet                      Silent any warnings (can be used multiple times)
         -I, --info                       General image info
-        -C, --chunks                     Show file chunks (default)
         -A, --ascii                      Try to display image as ASCII (works best with monochrome images)
         -S, --scanlines                  Show scanlines info
         -P, --palette                    Show palette
-        -E, --extract-chunk id
+        -E, --extract-chunk id           extract a single chunk
+        -C, --crop GEOMETRY              crop image, {WIDTH}x{HEIGHT}+{X}+{Y}, put results on stdout
 
 ### Info
 
@@ -158,6 +159,16 @@ source image: ![qr_rgb.png](https://github.com/zed-0xff/zpng/raw/master/samples/
       f << img.export
     end
 
+## Create 16x16 transparent PNG
+
+    #!/usr/bin/env ruby
+    require 'zpng'
+    include ZPNG
+
+    img = Image.new :width => 16, :height => 16
+    File.open("16x16.png","wb") do |f|
+      f << img.export
+    end
 
 License
 -------

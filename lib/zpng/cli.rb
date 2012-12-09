@@ -7,7 +7,6 @@ class ZPNG::CLI
 
   ACTIONS = {
     'info'      => 'General image info',
-    'chunks'    => 'Show file chunks (default)',
     'ascii'     => 'Try to display image as ASCII (works best with monochrome images)',
     'scanlines' => 'Show scanlines info',
     'palette'   => 'Show palette'
@@ -22,7 +21,11 @@ class ZPNG::CLI
     @actions = []
     @options = { :verbose => 0 }
     optparser = OptionParser.new do |opts|
-      opts.banner = "Usage: zpng [options]"
+      opts.banner = "Usage: zpng [options] filename.png"
+
+      opts.on '--chunks', 'Show file chunks (default)' do
+        @actions << :chunks
+      end
 
       opts.on "-v", "--verbose", "Run verbosely (can be used multiple times)" do |v|
         @options[:verbose] += 1
@@ -35,8 +38,12 @@ class ZPNG::CLI
         opts.on *[ "-#{t[0].upcase}", "--#{t}", desc, eval("lambda{ |_| @actions << :#{t} }") ]
       end
 
-      opts.on "-E", "--extract-chunk id" do |id|
+      opts.on "-E", "--extract-chunk id", "extract a single chunk" do |id|
         @actions << [:extract_chunk, id.to_i]
+      end
+
+      opts.on "-C", "--crop GEOMETRY", "crop image, {WIDTH}x{HEIGHT}+{X}+{Y}, put results on stdout" do |x|
+        @actions << [:crop, x]
       end
     end
 
@@ -80,12 +87,20 @@ class ZPNG::CLI
     end
   end
 
+  def crop geometry
+    unless geometry =~ /\A(\d+)x(\d+)\+(\d+)\+(\d+)\Z/i
+      STDERR.puts "[!] invalid geometry #{geometry.inspect}, must be WxH+X+Y, like 100x100+10+10"
+      exit 1
+    end
+    print @img.crop(:width => $1.to_i, :height => $2.to_i, :x => $3.to_i, :y => $4.to_i).export
+  end
+
   def load_file fname
     @img = ZPNG::Image.new fname
   end
 
   def info
-    puts "[.] image size #{@img.width}x#{@img.height}"
+    puts "[.] image size #{@img.width || '?'}x#{@img.height || '?'}"
     puts "[.] uncompressed imagedata size = #{@img.imagedata.size} bytes"
     puts "[.] palette = #{@img.palette}" if @img.palette
   end

@@ -14,6 +14,10 @@ module ZPNG
       r == 0 && g == 0 && b == 0
     end
 
+    def transparent?
+      a == 0
+    end
+
     def to_grayscale
       (r+g+b)/3
     end

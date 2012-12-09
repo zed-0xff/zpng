@@ -18,21 +18,38 @@ module ZPNG
       end
     end
 
-    def initialize io
-      @size, @type = io.read(8).unpack('Na4')
-      @data        = io.read(size)
-      @crc         = io.read(4).to_s.unpack('N').first
+    def initialize x = {}
+      if x.respond_to?(:read)
+        # IO
+        @size, @type = x.read(8).unpack('Na4')
+        @data        = x.read(size)
+        @crc         = x.read(4).to_s.unpack('N').first
+      elsif x.respond_to?(:[])
+        # Hash
+        %w'size type data crc'.each do |k|
+          instance_variable_set "@#{k}", x[k.to_sym]
+        end
+        if !@type && self.class.superclass == ZPNG::Chunk
+          # guess @type from self class name, e.g. ZPNG::Chunk::IHDR => "IHDR"
+          @type = self.class.to_s.split("::").last
+        end
+        if !@size && @data
+          # guess @size from @data
+          @size = @data.size
+        end
+      end
     end
 
     def export
       @data = self.export_data # virtual
+      @size = @data.size # XXX hmm.. is it always is?
       @crc = Zlib.crc32(data, Zlib.crc32(type))
       [@size,@type].pack('Na4') + @data + [@crc].pack('N')
     end
 
     def export_data
       #STDERR.puts "[!] Chunk::#{type} must realize 'export_data' virtual method".yellow if @size != 0
-      @data
+      @data || ''
     end
 
     def inspect
@@ -70,9 +87,22 @@ module ZPNG
 
       FORMAT = 'NNC5'
 
-      def initialize io
+      def initialize x
         super
-        @width, @height, @depth, @color, @compression, @filter, @interlace = data.unpack(FORMAT)
+        vars = %w'width height depth color compression filter interlace' # order is important
+        if x.respond_to?(:read)
+          # IO
+        elsif x.respond_to?(:[])
+          # Hash
+          vars.each do |k|
+            instance_variable_set "@#{k}", x[k.to_sym]
+          end
+        end
+        if data
+          data.unpack(FORMAT).each_with_index do |value,idx|
+            instance_variable_set "@#{vars[idx]}", value
+          end
+        end
       end
 
       def export_data
@@ -127,8 +157,8 @@ module ZPNG
       end
     end
 
-    class IEND < Chunk
-    end
+    class IDAT < Chunk; end
+    class IEND < Chunk; end
 
     class ZTXT < Chunk
       attr_accessor :keyword, :comp_method, :text

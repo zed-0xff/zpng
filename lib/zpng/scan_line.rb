@@ -1,3 +1,4 @@
+#coding: binary
 module ZPNG
   class ScanLine
     FILTER_NONE           = 0
@@ -12,13 +13,27 @@ module ZPNG
       @image,@idx = image,idx
       @bpp = image.hdr.bpp
       raise "[!] zero bpp" if @bpp == 0
-      if @BPP = (@bpp%8 == 0) && (@bpp>>3)
-        @offset = idx*(image.width*@BPP+1)
+
+      # Bytes Per Pixel, if bpp = 8, 16, 24, 32
+      # NULL otherwise
+      @BPP = (@bpp%8 == 0) && (@bpp>>3)
+
+      if @image.new?
+        @decoded_bytes = "\x00" * (size-1)
       else
-        @offset = idx*(image.width*@bpp/8.0+1).ceil
+        @offset = idx*size
+        @filter = image.imagedata[@offset].ord
+        @offset += 1
       end
-      @filter = image.imagedata[@offset].ord
-      @offset += 1
+    end
+
+    # total scanline size in bytes, INCLUDING leading 'filter' byte
+    def size
+      if @BPP
+        image.width*@BPP+1
+      else
+        (image.width*@bpp/8.0+1).ceil
+      end
     end
 
     def inspect

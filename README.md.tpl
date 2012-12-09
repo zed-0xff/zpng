@@ -61,6 +61,16 @@ source image: ![qr_rgb.png](https://github.com/zed-0xff/zpng/raw/master/samples/
       f << img.export
     end
 
+## Create 16x16 transparent PNG
+
+    #!/usr/bin/env ruby
+    require 'zpng'
+    include ZPNG
+
+    img = Image.new :width => 16, :height => 16
+    File.open("16x16.png","wb") do |f|
+      f << img.export
+    end
 
 License
 -------
