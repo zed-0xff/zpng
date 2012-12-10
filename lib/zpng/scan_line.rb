@@ -197,6 +197,7 @@ module ZPNG
       true
     end
 
+    private
     def decode_byte x, b0, bpp1
       raw = @image.imagedata[@offset+x]
 
@@ -241,6 +242,7 @@ module ZPNG
       (pa <= pb) ? (pa <= pc ? a : c) : (pb <= pc ? b : c)
     end
 
+    public
     def crop! x, w
       if @BPP
         # great, crop is byte-aligned! :)
@@ -265,7 +267,7 @@ module ZPNG
             end
           end
 
-          new_width_bits = w*8/@bpp
+          new_width_bits = w*@bpp
           diff = decoded_bytes.size*8 - new_width_bits
           raise if diff < 0
           if diff > 8

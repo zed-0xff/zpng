@@ -92,7 +92,8 @@ class ZPNG::CLI
       STDERR.puts "[!] invalid geometry #{geometry.inspect}, must be WxH+X+Y, like 100x100+10+10"
       exit 1
     end
-    print @img.crop(:width => $1.to_i, :height => $2.to_i, :x => $3.to_i, :y => $4.to_i).export
+    @img.crop! :width => $1.to_i, :height => $2.to_i, :x => $3.to_i, :y => $4.to_i
+    print @img.export
   end
 
   def load_file fname

@@ -206,14 +206,15 @@ module ZPNG
 
       # modify header
       hdr.height, hdr.width = h, w
+
+      # return self
+      self
     end
 
     # returns new image
     def crop params
-      img = Image.new :width => params[:width], :height => params[:height]
-      p img
-      exit
-      img
+      # deep copy first, then crop!
+      Marshal.load(Marshal.dump(self)).crop!(params)
     end
   end
 end
