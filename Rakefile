@@ -80,3 +80,38 @@ task :gen do
   img = ZPNG::Image.new :width => 16, :height => 16, :bpp => 4
   img.save "out.png"
 end
+
+Rake::Task[:console].clear
+
+# from /usr/local/lib64/ruby/gems/1.9.1/gems/jeweler-1.8.4/lib/jeweler/tasks.rb
+desc "Start IRB with all runtime dependencies loaded"
+task :console, [:script] do |t,args|
+  # TODO move to a command
+  dirs = ['ext', 'lib'].select { |dir| File.directory?(dir) }
+
+  original_load_path = $LOAD_PATH
+
+  cmd = if File.exist?('Gemfile')
+          require 'bundler'
+          Bundler.setup(:default)
+        end
+
+  # add the project code directories
+  $LOAD_PATH.unshift(*dirs)
+
+  # clear ARGV so IRB is not confused
+  ARGV.clear
+
+  require 'irb'
+
+  # ZZZ actually added only these 2 lines
+  require 'zpng'
+  include ZPNG
+
+  # set the optional script to run
+  IRB.conf[:SCRIPT] = args.script
+  IRB.start
+
+  # return the $LOAD_PATH to it's original state
+  $LOAD_PATH.reject! { |path| !(original_load_path.include?(path)) }
+end
