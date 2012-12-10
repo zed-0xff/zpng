@@ -5,7 +5,7 @@ module ZPNG
 
     PNG_HDR = "\x89PNG\x0d\x0a\x1a\x0a"
 
-    def initialize x = nil
+    def initialize x
       @chunks = []
       case x
         when IO
@@ -14,9 +14,11 @@ module ZPNG
           _from_string x
         when Hash
           _from_hash x
-        when nil
         else
           raise "unsupported input data type #{x.class}"
+      end
+      if palette && hdr && hdr.depth
+        palette.max_colors = 2**hdr.depth
       end
     end
 
@@ -44,7 +46,11 @@ module ZPNG
 
     def _from_hash h
       @new_image = true
-      @chunks << (@header = Chunk::IHDR.new(h))
+      @chunks << (@header  = Chunk::IHDR.new(h))
+      if @header.palette_used?
+        @chunks << (@palette = Chunk::PLTE.new)
+        @palette[0] = h[:bg] || Color::BLACK # add default bg color
+      end
     end
 
     def _from_string x
@@ -98,6 +104,10 @@ module ZPNG
 
     def height
       @header && @header.height
+    end
+
+    def grayscale?
+      @header && @header.grayscale?
     end
 
     def imagedata

@@ -19,11 +19,12 @@ Usage
         -v, --verbose                    Run verbosely (can be used multiple times)
         -q, --quiet                      Silent any warnings (can be used multiple times)
         -C, --chunks                     Show file chunks (default)
-        -I, --info                       General image info
+        -i, --info                       General image info (default)
         -A, --ascii                      Try to display image as ASCII (works best with monochrome images)
         -S, --scanlines                  Show scanlines info
         -P, --palette                    Show palette
-        -E, --extract-chunk id           extract a single chunk
+        -E, --extract-chunk ID           extract a single chunk
+        -U, --unpack-imagedata           unpack Image Data (IDAT) chunk(s), output to stdout
         -c, --crop GEOMETRY              crop image, {WIDTH}x{HEIGHT}+{X}+{Y},
                                          puts results on stdout unless --ascii given
 

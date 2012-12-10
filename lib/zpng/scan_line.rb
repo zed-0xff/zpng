@@ -59,6 +59,7 @@ module ZPNG
 
       @image.width.times.map do |i|
         px = decode_pixel(i)
+#        printf "[d] %08x %s %s\n", px.to_i, px.inspect, px.to_s unless px.black?
         px.white?? white : (px.black?? black : unknown)
       end.join
     end
@@ -68,40 +69,37 @@ module ZPNG
     end
 
     def []= x, newcolor
+      if image.hdr.palette_used?
+        color_idx = image.palette.find_or_add(newcolor)
+        raise "no color #{newcolor.inspect} in palette" unless color_idx
+      elsif image.grayscale?
+        color_idx = newcolor.to_grayscale
+      end
+
       case @bpp
-      when 1
-        flag =
-          if image.hdr.palette_used?
-            idx = image.palette.index(newcolor)
-            raise "no color #{newcolor.inspect} in palette" unless idx
-            idx == 1
-          else
-            if newcolor.white?
-              true
-            elsif newcolor.black?
-              false
-            else
-              raise "1bpp pixel can only be WHITE or BLACK, got #{newcolor.inspect}"
-            end
-          end
-        if flag
-          # turn pixel on
-          decoded_bytes[x/8] = (decoded_bytes[x/8].ord | (1<<(7-(x%8)))).chr
-        else
-          # turn pixel off
-          decoded_bytes[x/8] = (decoded_bytes[x/8].ord & (0xff-(1<<(7-(x%8))))).chr
-        end
+      when 1,2,4
+        pos = x*@bpp/8
+        b = decoded_bytes[pos].ord
+        mask  = 2**@bpp-1
+        shift = 8-(x%(8/@bpp)+1)*@bpp
+        raise "invalid shift #{shift}" if shift < 0 || shift > 7
+
+#        printf "[d] %s x=%2d bpp=%d pos=%d mask=%08b shift=%d decoded_bytes=#{decoded_bytes.inspect}\n", self.to_s, x, @bpp, pos, mask, shift
+
+        b = (b & (0xff-(mask<<shift))) | ((color_idx & mask) << shift)
+        decoded_bytes[pos] = b.chr
+
       when 8
         if image.hdr.palette_used?
-          decoded_bytes[x] = (image.palette.index(newcolor)).chr
+          decoded_bytes[x] = color_idx.chr
         else
           decoded_bytes[x] = ((newcolor.r + newcolor.g + newcolor.b)/3).chr
         end
       when 16
         if image.hdr.palette_used? && image.hdr.alpha_used?
-          decoded_bytes[x*2] = (image.palette.index(newcolor)).chr
+          decoded_bytes[x*2] = color_idx.chr
           decoded_bytes[x*2+1] = (newcolor.alpha || 0xff).chr
-        elsif image.hdr.grayscale? && image.hdr.alpha_used?
+        elsif image.grayscale? && image.hdr.alpha_used?
           decoded_bytes[x*2] = newcolor.to_grayscale.chr
           decoded_bytes[x*2+1] = (newcolor.alpha || 0xff).chr
         else
@@ -122,55 +120,47 @@ module ZPNG
           decoded_bytes[x*@BPP, @BPP]
         else
           # 1, 2 or 4 bits per pixel
-          decoded_bytes[x*@bpp/8, (@bpp/8.0).ceil]
+          decoded_bytes[x*@bpp/8]
         end
 
-      r = g = b = a = nil
+      color, alpha =
+        case @bpp
+        when 1,2,4
+          mask  = 2**@bpp-1
+          shift = 8-(x%(8/@bpp)+1)*@bpp
+          raise "invalid shift #{shift}" if shift < 0 || shift > 7
+          [(raw.ord >> shift) & mask, nil]
+        when 8
+          [raw.ord, nil]
+        when 16
+          raw.unpack 'C2'
+        when 24
+          # RGB
+          return Color.new(*raw.unpack('C3'))
+        when 32
+          # RGBA
+          return Color.new(*raw.unpack('C4'))
+        else
+          raise "unexpected bpp #{@bpp}"
+        end
 
-      colormode = image.hdr.color
-
-      if image.hdr.palette_used?
-        idx =
-          case @bpp
-          when 1
-            # needed for palette
-            (raw.ord & (1<<(7-(x%8)))) == 0 ? 0 : 1
-          when 4
-            x%2 == 0 ? (raw.ord&0x0f) : (raw.ord >> 4)
-          when 8
-            raw.ord
-          when 16
-            raw[0].ord
-          else raise "unexpected bpp #{@bpp}"
+      if image.grayscale?
+        if [1,2,4].include?(@bpp)
+          #color should be extended to a 8-bit range
+          if color%2 == 0
+            color <<= (8-@bpp)
+          else
+            (8-@bpp).times{ color = color*2 + 1 }
           end
-
-        return image.palette[idx]
-      end
-
-      case @bpp
-      when 1
-        r=g=b= (raw.ord & (1<<(7-(x%8)))) == 0 ? 0 : 0xff
-      when 8
-        if colormode == COLOR_GRAYSCALE
-          r=g=b= raw.ord
-        else
-          raise "unexpected colormode #{colormode} for bpp #{@bpp}"
         end
-      when 16
-        if colormode == COLOR_GRAY_ALPHA
-          r=g=b= raw[0].ord
-          a = raw[1].ord
-        else
-          raise "unexpected colormode #{colormode} for bpp #{@bpp}"
-        end
-      when 24
-        r,g,b = raw.split('').map(&:ord)
-      when 32
-        r,g,b,a = raw.split('').map(&:ord)
-      else raise "unexpected bpp #{@bpp}"
+        Color.from_grayscale(color, alpha)
+      elsif image.palette
+        color = image.palette[color]
+        color.alpha = alpha
+        color
+      else
+        raise "cannot decode color"
       end
-
-      Color.new(r,g,b,a)
     end
 
     def decoded_bytes

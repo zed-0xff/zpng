@@ -7,7 +7,7 @@ class ZPNG::CLI
 
   ACTIONS = {
     'chunks'    => 'Show file chunks (default)',
-    'info'      => 'General image info',
+    %w'i info'      => 'General image info (default)',
     'ascii'     => 'Try to display image as ASCII (works best with monochrome images)',
     'scanlines' => 'Show scanlines info',
     'palette'   => 'Show palette'
@@ -32,11 +32,18 @@ class ZPNG::CLI
       end
 
       ACTIONS.each do |t,desc|
-        opts.on *[ "-#{t[0].upcase}", "--#{t}", desc, eval("lambda{ |_| @actions << :#{t} }") ]
+        if t.is_a?(Array)
+          opts.on *[ "-#{t[0]}", "--#{t[1]}", desc, eval("lambda{ |_| @actions << :#{t[1]} }") ]
+        else
+          opts.on *[ "-#{t[0].upcase}", "--#{t}", desc, eval("lambda{ |_| @actions << :#{t} }") ]
+        end
       end
 
-      opts.on "-E", "--extract-chunk id", "extract a single chunk" do |id|
+      opts.on "-E", "--extract-chunk ID", "extract a single chunk" do |id|
         @actions << [:extract_chunk, id.to_i]
+      end
+      opts.on "-U", "--unpack-imagedata", "unpack Image Data (IDAT) chunk(s), output to stdout" do
+        @actions << :unpack_imagedata
       end
 
       opts.on "-c", "--crop GEOMETRY", "crop image, {WIDTH}x{HEIGHT}+{X}+{Y},",
@@ -83,6 +90,10 @@ class ZPNG::CLI
         end
       end
     end
+  end
+
+  def unpack_imagedata
+    print @img.imagedata
   end
 
   def crop geometry

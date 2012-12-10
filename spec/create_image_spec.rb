@@ -12,6 +12,7 @@ describe Image do
       describe "new( :bpp => #{bpp}, :color => #{color} )" do
         subject(:img){ _new_img(bpp,color) }
         it("should export"){ img.export.should start_with(Image::PNG_HDR) }
+        it("should to_s")  {  img.to_s.strip.split("\n").size.should == 8 }
 
         subject{ img.hdr }
         its(:depth) { should == bpp }
@@ -23,6 +24,7 @@ describe Image do
   describe "new( :bpp => 16, :color => false )" do
     subject(:img){ _new_img(16,false) }
     it("should export"){ img.export.should start_with(Image::PNG_HDR) }
+    it("should to_s")  {  img.to_s.strip.split("\n").size.should == 8 }
 
     subject{ img.hdr }
     its(:depth) { should == 8 } # 8 bits per color + 8 per alpha = 16 bpp
@@ -37,6 +39,7 @@ describe Image do
   describe "new( :bpp => 24, :color => false )" do
     subject(:img){ _new_img(24,false) }
     it("should export"){ img.export.should start_with(Image::PNG_HDR) }
+    it("should to_s")  {  img.to_s.strip.split("\n").size.should == 8 }
 
     subject{ img.hdr }
     its(:depth) { should == 8 } # each channel depth = 8
@@ -46,6 +49,7 @@ describe Image do
   describe "new( :bpp => 24, :color => true )" do
     subject(:img){ _new_img(24,true) }
     it("should export"){ img.export.should start_with(Image::PNG_HDR) }
+    it("should to_s")  {  img.to_s.strip.split("\n").size.should == 8 }
 
     subject{ img.hdr }
     its(:depth) { should == 8 } # each channel depth = 8
@@ -55,6 +59,7 @@ describe Image do
   describe "new( :bpp => 32, :color => false )" do
     subject(:img){ _new_img(32,false) }
     it("should export"){ img.export.should start_with(Image::PNG_HDR) }
+    it("should to_s")  {  img.to_s.strip.split("\n").size.should == 8 }
 
     subject{ img.hdr }
     its(:depth) { should == 8 } # each channel depth = 8
@@ -64,6 +69,7 @@ describe Image do
   describe "new( :bpp => 32, :color => true )" do
     subject(:img){ _new_img(32,true) }
     it("should export"){ img.export.should start_with(Image::PNG_HDR) }
+    it("should to_s")  {  img.to_s.strip.split("\n").size.should == 8 }
 
     subject{ img.hdr }
     its(:depth) { should == 8 } # each channel depth = 8

@@ -110,6 +110,9 @@ module ZPNG
           # Hash
           vars.each{ |k| instance_variable_set "@#{k}", x[k.to_sym] }
 
+          raise "[!] width not set" unless @width
+          raise "[!] height not set" unless @height
+
           # allow easier image creation like
           # img = Image.new :width => 16, :height => 16, :bpp => 4, :color => false
           # img = Image.new :width => 16, :height => 16, :bpp => 1, :color => true
@@ -184,13 +187,20 @@ module ZPNG
     end
 
     class PLTE < Chunk
+      attr_accessor :max_colors
+
       def [] idx
         rgb = @data[idx*3,3]
-        rgb && ZPNG::Color.new(*rgb.split('').map(&:ord))
+        rgb && ZPNG::Color.new(*rgb.unpack('C3'))
+      end
+
+      def []= idx, color
+        @data ||= ''
+        @data[idx*3,3] = [color.r, color.g, color.b].pack('C3')
       end
 
       def ncolors
-        @size/3
+        @data.to_s.size/3
       end
 
       def index color
@@ -200,6 +210,18 @@ module ZPNG
         end
         nil
       end
+
+      def add color
+        raise "palette full, cannot add color #{ncolors}" if ncolors >= max_colors
+        idx = ncolors
+        self[idx] = color
+        idx
+      end
+
+      def find_or_add color
+        index(color) || add(color)
+      end
+      alias :<< :find_or_add
     end
 
     class IDAT < Chunk; end
