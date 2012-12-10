@@ -20,6 +20,14 @@ module ZPNG
       end
     end
 
+    # load image from file
+    def self.load fname
+      open(fname,"rb") do |f|
+        Image.new(f)
+      end
+    end
+    alias :load_file :load
+
     # flag that image is just created, and NOT loaded from file
     # as in Rails' ActiveRecord::Base#new_record?
     def new_image?
@@ -125,6 +133,7 @@ module ZPNG
           height.to_i.times do |i|
             r << ScanLine.new(self,i)
           end
+          r.delete_if(&:bad?)
           r
         end
     end
@@ -172,6 +181,31 @@ module ZPNG
       @chunks << Chunk::IEND.new
 
       PNG_HDR + @chunks.map(&:export).join
+    end
+
+    # modifies this image
+    def crop! params
+      imagedata # fill @imagedata, if not already filled
+
+      x,y,h,w = (params[:x]||0), (params[:y]||0), params[:height], params[:width]
+      raise "negative params not allowed" if [x,y,h,w].any?{ |x| x < 0 }
+
+      # adjust crop sizes if they greater than image sizes
+      h = self.height-y if (y+h) > self.height
+      w = self.width -x if (x+w) > self.width
+      raise "negative params not allowed (p2)" if [x,y,h,w].any?{ |x| x < 0 }
+
+      # delete excess scanlines at tail
+      scanlines[(y+h)..-1] = [] if (y+h) < scanlines.size
+
+      # delete excess scanlines at head
+      scanlines[0,y] = [] if y > 0
+
+      # crop remaining scanlines
+      scanlines.each{ |l| l.crop!(x,w) }
+
+      # modify header
+      hdr.height, hdr.width = h, w
     end
 
     # returns new image

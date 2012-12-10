@@ -20,11 +20,21 @@ module ZPNG
 
       if @image.new?
         @decoded_bytes = "\x00" * (size-1)
+        @filter = FILTER_NONE
       else
         @offset = idx*size
-        @filter = image.imagedata[@offset].ord
+        if @filter = image.imagedata[@offset]
+          @filter = @filter.ord
+        else
+          STDERR.puts "[!] #{self.class}: ##@idx: no data at pos 0, scanline dropped".red
+        end
         @offset += 1
       end
+    end
+
+    # ScanLine is BAD if it has no filter
+    def bad?
+      !@filter
     end
 
     # total scanline size in bytes, INCLUDING leading 'filter' byte
@@ -37,7 +47,7 @@ module ZPNG
     end
 
     def inspect
-      "#<ZPNG::ScanLine " + (instance_variables-[:@image, :@decoded]).
+      "#<ZPNG::ScanLine " + (instance_variables-[:@image, :@decoded, :@BPP]).
           map{ |var| "#{var.to_s.tr('@','')}=#{instance_variable_get(var)}" }.
           join(", ") + ">"
     end
@@ -191,7 +201,7 @@ module ZPNG
       raw = @image.imagedata[@offset+x]
 
       unless raw
-        STDERR.puts "[!] not enough bytes at pos #{x} of scanline #@idx".red
+        STDERR.puts "[!] #{self.class}: ##@idx: no data at pos #{x}".red
         raw = 0.chr
       end
 
@@ -231,9 +241,52 @@ module ZPNG
       (pa <= pb) ? (pa <= pc ? a : c) : (pb <= pc ? b : c)
     end
 
+    def crop! x, w
+      if @BPP
+        # great, crop is byte-aligned! :)
+        decoded_bytes[0,x*@BPP]   = ''
+        decoded_bytes[w*@BPP..-1] = ''
+      else
+        # oh, no we have to shift bits in a whole line :(
+        case @bpp
+        when 1
+        when 2
+        when 4
+          cut_bits_head = @bpp*x
+          if cut_bits_head > 8
+            # cut whole head bytes
+            decoded_bytes[0,cut_bits_head/8] = ''
+          end
+          cut_bits_head %= 8
+          if cut_bits_head > 0
+            # bit-shift all remaining bytes
+            (w/2).times do |i|
+              decoded_bytes[i] = (decoded_bytes[i].ord<<cut_bits_head) | (decoded_bytes[i+1].ord>>(8-cut_bits_head)).chr
+            end
+          end
+
+          new_width_bits = w*8/@bpp
+          diff = decoded_bytes.size*8 - new_width_bits
+          raise if diff < 0
+          if diff > 8
+            # cut whole tail bytes
+            decoded_bytes[(new_width_bits/8.0).ceil..-1] = ''
+          end
+          diff %= 8
+          if diff > 0
+            # zero tail bits of last byte
+            decoded_bytes[-1] = (decoded_bytes[-1].ord & (0xff-(2**diff)+1)).chr
+          end
+
+        else
+          raise "unexpected bpp=#@bpp"
+        end
+      end
+    end
+
     def export
       # we export in FILTER_NONE mode
-      "\x00" + decoded_bytes
+      FILTER_NONE.chr + decoded_bytes
     end
   end
 end
