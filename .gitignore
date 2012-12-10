@@ -1,4 +1,6 @@
 *.png
+/*.html
+?.rb
 
 # rcov generated
 coverage
