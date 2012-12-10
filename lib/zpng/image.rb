@@ -28,6 +28,11 @@ module ZPNG
     end
     alias :load_file :load
 
+    # save image to file
+    def save fname
+      File.open(fname,"wb"){ |f| f << export }
+    end
+
     # flag that image is just created, and NOT loaded from file
     # as in Rails' ActiveRecord::Base#new_record?
     def new_image?
@@ -39,11 +44,6 @@ module ZPNG
 
     def _from_hash h
       @new_image = true
-      h[:depth]       ||= 8
-      h[:color]       ||= Chunk::IHDR::COLOR_RGBA
-      h[:compression] ||= 0
-      h[:filter]      ||= 0
-      h[:interlace]   ||= 0
       @chunks << (@header = Chunk::IHDR.new(h))
     end
 
@@ -101,13 +101,16 @@ module ZPNG
     end
 
     def imagedata
-      if @header
-        raise "only non-interlaced mode is supported for imagedata" if @header.interlace != 0
-      else
-        puts "[?] no image header, assuming non-interlaced RGB".yellow
-      end
-      data = @chunks.find_all{ |c| c.type == "IDAT" }.map(&:data).join
-      @imagedata ||= (data && data.size > 0) ? Zlib::Inflate.inflate(data) : ''
+      @imagedata ||=
+        begin
+          if @header
+            raise "only non-interlaced mode is supported for imagedata" if @header.interlace != 0
+          else
+            puts "[?] no image header, assuming non-interlaced RGB".yellow
+          end
+          data = @chunks.find_all{ |c| c.is_a?(Chunk::IDAT) }.map(&:data).join
+          (data && data.size > 0) ? Zlib::Inflate.inflate(data) : ''
+        end
     end
 
     def [] x, y
@@ -115,15 +118,16 @@ module ZPNG
     end
 
     def []= x, y, newpixel
-      # we must decode all scanlines before doing any modifications
-      # or scanlines decoded AFTER modification of UPPER ones will be decoded wrong
-      _decode_all_scanlines unless @_all_scanlines_decoded
+      decode_all_scanlines
       scanlines[y][x] = newpixel
     end
 
-    def _decode_all_scanlines
+    # we must decode all scanlines before doing any modifications
+    # or scanlines decoded AFTER modification of UPPER ones will be decoded wrong
+    def decode_all_scanlines
+      return if @all_scanlines_decoded
+      @all_scanlines_decoded = true
       scanlines.each(&:decode!)
-      @_all_scanlines_decoded = true
     end
 
     def scanlines
@@ -185,14 +189,14 @@ module ZPNG
 
     # modifies this image
     def crop! params
-      imagedata # fill @imagedata, if not already filled
+      decode_all_scanlines
 
       x,y,h,w = (params[:x]||0), (params[:y]||0), params[:height], params[:width]
       raise "negative params not allowed" if [x,y,h,w].any?{ |x| x < 0 }
 
       # adjust crop sizes if they greater than image sizes
       h = self.height-y if (y+h) > self.height
-      w = self.width -x if (x+w) > self.width
+      w = self.width-x if (x+w) > self.width
       raise "negative params not allowed (p2)" if [x,y,h,w].any?{ |x| x < 0 }
 
       # delete excess scanlines at tail

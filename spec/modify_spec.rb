@@ -38,18 +38,11 @@ ASCII_MODIFIED_QR = <<EOF
 ...................................
 EOF
 
-samples =
-  if ENV['SAMPLES']
-    ENV['SAMPLES'].split(' ')
-  else
-    Dir[File.join(SAMPLES_DIR,'qr_*.png')]
-  end
-
 describe "ZPNG modify" do
   it "should have QR examples" do
-    samples.should_not be_empty
+    SAMPLES.should_not be_empty
   end
-  samples.each do |fname|
+  SAMPLES.each do |fname|
     describe fname.sub(File.dirname(SAMPLES_DIR)+'/','') do
       img = ZPNG::Image.new(fname)
       it "modifies img - color=#{img.hdr.color}, depth=#{img.hdr.depth}, bpp=#{img.hdr.bpp}" do

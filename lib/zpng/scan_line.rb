@@ -151,13 +151,13 @@ module ZPNG
       when 1
         r=g=b= (raw.ord & (1<<(7-(x%8)))) == 0 ? 0 : 0xff
       when 8
-        if colormode == ZPNG::Chunk::IHDR::COLOR_GRAYSCALE
+        if colormode == COLOR_GRAYSCALE
           r=g=b= raw.ord
         else
           raise "unexpected colormode #{colormode} for bpp #{@bpp}"
         end
       when 16
-        if colormode == ZPNG::Chunk::IHDR::COLOR_GRAY_ALPHA
+        if colormode == COLOR_GRAY_ALPHA
           r=g=b= raw[0].ord
           a = raw[1].ord
         else
@@ -174,6 +174,7 @@ module ZPNG
     end
 
     def decoded_bytes
+      raise if caller.size > 50
       @decoded_bytes ||=
         begin
           # number of bytes per complete pixel, rounding up to one
@@ -251,9 +252,7 @@ module ZPNG
       else
         # oh, no we have to shift bits in a whole line :(
         case @bpp
-        when 1
-        when 2
-        when 4
+        when 1,2,4
           cut_bits_head = @bpp*x
           if cut_bits_head > 8
             # cut whole head bytes
@@ -262,8 +261,11 @@ module ZPNG
           cut_bits_head %= 8
           if cut_bits_head > 0
             # bit-shift all remaining bytes
-            (w/2).times do |i|
-              decoded_bytes[i] = (decoded_bytes[i].ord<<cut_bits_head) | (decoded_bytes[i+1].ord>>(8-cut_bits_head)).chr
+            (w*@bpp/8.0).ceil.times do |i|
+              decoded_bytes[i] = ((
+                (decoded_bytes[i].ord<<cut_bits_head) |
+                (decoded_bytes[i+1].ord>>(8-cut_bits_head))
+              ) & 0xff).chr
             end
           end
 

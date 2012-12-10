@@ -4,6 +4,16 @@ CROP_WIDTH  = 10
 CROP_HEIGHT = 10
 CROP_SAMPLE = File.join(SAMPLES_DIR, "captcha_4bpp.png")
 
+QR_SQUARE = <<EOF
+#######
+#.....#
+#.###.#
+#.###.#
+#.###.#
+#.....#
+#######
+EOF
+
 include ZPNG
 
 describe Image do
@@ -49,6 +59,34 @@ describe Image do
 
       it "has #{CROP_HEIGHT} scanlines" do
         img2.scanlines.size.should == CROP_HEIGHT
+      end
+    end
+  end
+
+  SAMPLES.find_all{ |fname| fname['qr_'] }.each do |fname|
+    describe fname do
+      let!(:img){ Image.load fname }
+
+      it "should extract left square" do
+        img.crop! :x => 1, :y => 1, :width => 7, :height => 7
+        img.to_s(:white => '.', :black => '#').strip.should == QR_SQUARE.strip
+      end
+
+      it "should extract right square" do
+        img.crop! :x => 27, :y => 1, :width => 7, :height => 7
+        img.to_s(:white => '.', :black => '#').strip.should == QR_SQUARE.strip
+      end
+
+      it "should extract bottom square" do
+        img.crop! :x => 1, :y => 27, :width => 7, :height => 7
+        img.to_s(:white => '.', :black => '#').strip.should == QR_SQUARE.strip
+      end
+
+      it "keeps whole original image if crop is larger than image" do
+        img2 = img.crop :x => 0, :y => 0, :width => 7000, :height => 7000
+        img2.width.should  == img.width
+        img2.height.should == img.height
+        img2.to_s.should   == img.to_s
       end
     end
   end

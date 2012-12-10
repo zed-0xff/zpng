@@ -72,3 +72,11 @@ task :readme do
   Dir.chdir '..'
   File.open('README.md','w'){ |f| f << result }
 end
+
+desc "generate"
+task :gen do
+  $:.unshift("./lib")
+  require 'zpng'
+  img = ZPNG::Image.new :width => 16, :height => 16, :bpp => 4
+  img.save "out.png"
+end

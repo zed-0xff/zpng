@@ -53,7 +53,7 @@ module ZPNG
     end
 
     def inspect
-      size = @size ? sprintf("%5d",@size) : sprintf("%5s","???")
+      size = @size ? sprintf("%6d",@size) : sprintf("%6s","???")
       crc  = @crc  ? sprintf("%08x",@crc) : sprintf("%8s","???")
       type = @type.to_s.gsub(/[^0-9a-z]/i){ |x| sprintf("\\x%02X",x.ord) }
       sprintf "<Chunk #%02d %4s size=%s, crc=%s >", idx.to_i, type, size, crc
@@ -71,11 +71,16 @@ module ZPNG
       COLOR_USED   = 2
       ALPHA_USED   = 4
 
-      COLOR_GRAYSCALE  = 0  # Each pixel is a grayscale sample
-      COLOR_RGB        = 2  # Each pixel is an R,G,B triple.
-      COLOR_INDEXED    = 3  # Each pixel is a palette index; a PLTE chunk must appear.
-      COLOR_GRAY_ALPHA = 4  # Each pixel is a grayscale sample, followed by an alpha sample.
-      COLOR_RGBA       = 6  # Each pixel is an R,G,B triple, followed by an alpha sample.
+      # put constants in the scope of ZPNG module
+      # to be able to create new images easily with
+      # include ZPNG
+      # img = Image.new :width => 16, :height => 16, :color => COLOR_RGB
+
+      ZPNG::COLOR_GRAYSCALE  = 0  # Each pixel is a grayscale sample
+      ZPNG::COLOR_RGB        = 2  # Each pixel is an R,G,B triple.
+      ZPNG::COLOR_INDEXED    = 3  # Each pixel is a palette index; a PLTE chunk must appear.
+      ZPNG::COLOR_GRAY_ALPHA = 4  # Each pixel is a grayscale sample, followed by an alpha sample.
+      ZPNG::COLOR_RGBA       = 6  # Each pixel is an R,G,B triple, followed by an alpha sample.
 
       SAMPLES_PER_COLOR = {
         COLOR_GRAYSCALE  => 1,
@@ -83,6 +88,15 @@ module ZPNG
         COLOR_INDEXED    => 1,
         COLOR_GRAY_ALPHA => 2,
         COLOR_RGBA       => 4
+      }
+
+      # http://www.w3.org/TR/PNG/#table111
+      ALLOWED_DEPTHS = {
+        COLOR_GRAYSCALE  => [ 1, 2, 4, 8, 16 ],
+        COLOR_RGB        => [          8, 16 ],
+        COLOR_INDEXED    => [ 1, 2, 4, 8     ],
+        COLOR_GRAY_ALPHA => [          8, 16 ],
+        COLOR_RGBA       => [          8, 16 ],
       }
 
       FORMAT = 'NNC5'
@@ -94,8 +108,39 @@ module ZPNG
           # IO
         elsif x.respond_to?(:[])
           # Hash
-          vars.each do |k|
-            instance_variable_set "@#{k}", x[k.to_sym]
+          vars.each{ |k| instance_variable_set "@#{k}", x[k.to_sym] }
+
+          # allow easier image creation like
+          # img = Image.new :width => 16, :height => 16, :bpp => 4, :color => false
+          # img = Image.new :width => 16, :height => 16, :bpp => 1, :color => true
+          # img = Image.new :width => 16, :height => 16, :bpp => 32
+          if x[:bpp]
+            unless [true,false,nil].include?(@color)
+              raise "[!] :color must be either 'true' or 'false' when :bpp is set"
+            end
+            if @depth
+              raise "[!] don't use :depth when :bpp is set"
+            end
+            @color, @depth = case x[:bpp]
+              when 1,2,4,8; [ @color ? COLOR_INDEXED : COLOR_GRAYSCALE,  x[:bpp] ]
+              when 16;
+                raise "[!] I don't know how to make COLOR 16 bpp PNG. do you?" if @color
+                [ COLOR_GRAY_ALPHA, 8 ]
+              when 24;      [ COLOR_RGB,  8 ]
+              when 32;      [ COLOR_RGBA, 8 ]
+              else
+                raise "[!] unsupported bpp=#{x[:bpp].inspect}"
+              end
+          end
+
+          @color       ||= COLOR_RGBA
+          @depth       ||= 8
+          @compression ||= 0
+          @filter      ||= 0
+          @interlace   ||= 0
+
+          unless ALLOWED_DEPTHS[@color].include?(@depth)
+            raise "[!] invalid color mode (#{@color.inspect}) / bit depth (#{@depth.inspect}) combination"
           end
         end
         if data

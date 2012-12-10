@@ -6,6 +6,7 @@ require 'pp'
 class ZPNG::CLI
 
   ACTIONS = {
+    'chunks'    => 'Show file chunks (default)',
     'info'      => 'General image info',
     'ascii'     => 'Try to display image as ASCII (works best with monochrome images)',
     'scanlines' => 'Show scanlines info',
@@ -23,10 +24,6 @@ class ZPNG::CLI
     optparser = OptionParser.new do |opts|
       opts.banner = "Usage: zpng [options] filename.png"
 
-      opts.on '--chunks', 'Show file chunks (default)' do
-        @actions << :chunks
-      end
-
       opts.on "-v", "--verbose", "Run verbosely (can be used multiple times)" do |v|
         @options[:verbose] += 1
       end
@@ -42,7 +39,8 @@ class ZPNG::CLI
         @actions << [:extract_chunk, id.to_i]
       end
 
-      opts.on "-C", "--crop GEOMETRY", "crop image, {WIDTH}x{HEIGHT}+{X}+{Y}, put results on stdout" do |x|
+      opts.on "-c", "--crop GEOMETRY", "crop image, {WIDTH}x{HEIGHT}+{X}+{Y},",
+      "puts results on stdout unless --ascii given" do |x|
         @actions << [:crop, x]
       end
     end
@@ -93,7 +91,7 @@ class ZPNG::CLI
       exit 1
     end
     @img.crop! :width => $1.to_i, :height => $2.to_i, :x => $3.to_i, :y => $4.to_i
-    print @img.export
+    print @img.export unless @actions.include?(:ascii)
   end
 
   def load_file fname

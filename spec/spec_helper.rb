@@ -8,7 +8,6 @@ require 'zpng'
 Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
 
 RSpec.configure do |config|
-
 end
 
 SAMPLES_DIR = File.join(
@@ -16,3 +15,10 @@ SAMPLES_DIR = File.join(
     File.dirname(
       File.expand_path(__FILE__))),
   "samples")
+
+SAMPLES =
+  if ENV['SAMPLES']
+    ENV['SAMPLES'].split(' ')
+  else
+    Dir[File.join(SAMPLES_DIR,'qr_*.png')]
+  end
