@@ -47,8 +47,13 @@ module ZPNG
         rs = r ? "%02x" % r : "??"
         gs = g ? "%02x" % g : "??"
         bs = b ? "%02x" % b : "??"
-        as = a ? "%d"   % a : "?"
-        "#<ZPNG::Color #%s%s%s%s a=%s>" % [rs,gs,bs,as]
+        if a
+          # alpha is non-NULL
+          "#<ZPNG::Color #%s%s%s a=%d>" % [rs,gs,bs,a]
+        else
+          # alpha is NULL
+          "#<ZPNG::Color #%s%s%s>" % [rs,gs,bs]
+        end
       end
     end
   end
