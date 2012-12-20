@@ -49,7 +49,7 @@ module ZPNG
       @chunks << (@header  = Chunk::IHDR.new(h))
       if @header.palette_used?
         @chunks << (@palette = Chunk::PLTE.new)
-        @palette[0] = h[:bg] || Color::BLACK # add default bg color
+        @palette[0] = h[:background] || h[:bg] || Color::BLACK # add default bg color
       end
     end
 
