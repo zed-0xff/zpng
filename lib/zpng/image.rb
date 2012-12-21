@@ -59,12 +59,14 @@ module ZPNG
 
     def _from_string x
       if x
-        if x[PNG_HDR]
+        if PNG_HDR.size.times.all?{ |i| x[i].ord == PNG_HDR[i].ord } # encoding error workaround
           # raw image data
           @data = x
-        else
+        elsif File.exist?(x)
           # filename
           @data = File.binread(x)
+        else
+          raise "Don't know what #{x.inspect} is"
         end
       end
 
