@@ -8,6 +8,7 @@ require 'zpng/block'
 require 'zpng/scan_line'
 require 'zpng/chunk'
 require 'zpng/image'
+require 'zpng/adam7_decoder'
 
 # see alse http://github.com/wvanbergen/chunky_png/
 

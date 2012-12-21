@@ -7,7 +7,7 @@ module ZPNG
     FILTER_AVERAGE        = 3
     FILTER_PAETH          = 4
 
-    attr_accessor :image, :idx, :filter, :offset
+    attr_accessor :image, :idx, :filter, :offset, :bpp
 
     def initialize image, idx
       @image,@idx = image,idx
@@ -22,7 +22,12 @@ module ZPNG
         @decoded_bytes = "\x00" * (size-1)
         @filter = FILTER_NONE
       else
-        @offset = idx*size
+        @offset =
+          if image.interlaced?
+            image.adam7.scanline_offset(idx)
+          else
+            idx*size
+          end
         if @filter = image.imagedata[@offset]
           @filter = @filter.ord
         else
@@ -39,17 +44,27 @@ module ZPNG
 
     # total scanline size in bytes, INCLUDING leading 'filter' byte
     def size
+      w =
+        if image.interlaced?
+          image.adam7.scanline_width(idx)
+        else
+          image.width
+        end
       if @BPP
-        image.width*@BPP+1
+        w*@BPP+1
       else
-        (image.width*@bpp/8.0+1).ceil
+        (w*@bpp/8.0+1).ceil
       end
     end
 
     def inspect
-      "#<ZPNG::ScanLine " + (instance_variables-[:@image, :@decoded, :@BPP]).
-          map{ |var| "#{var.to_s.tr('@','')}=#{instance_variable_get(var)}" }.
-          join(", ") + ">"
+      if image.interlaced?
+        "#<ZPNG::ScanLine idx=%-2d offset=%-3d width=%-2d size=%-2d bpp=%d filter=%d>" %
+          [idx, offset, image.adam7.scanline_width(idx), size, bpp, filter]
+      else
+        "#<ZPNG::ScanLine idx=%-2d offset=%-3d size=%-2d bpp=%d filter=%d>" %
+          [idx, offset, size, bpp, filter]
+      end
     end
 
     def to_s h={}

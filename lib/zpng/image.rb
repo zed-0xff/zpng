@@ -22,6 +22,10 @@ module ZPNG
       end
     end
 
+    def adam7
+      @adam7 ||= Adam7Decoder.new(self)
+    end
+
     # load image from file
     def self.load fname
       open(fname,"rb") do |f|
@@ -98,6 +102,10 @@ module ZPNG
       end
     end
 
+    def bpp
+      @header && @header.bpp
+    end
+
     def width
       @header && @header.width
     end
@@ -110,11 +118,15 @@ module ZPNG
       @header && @header.grayscale?
     end
 
+    def interlaced?
+      @header && @header.interlace != 0
+    end
+
     def imagedata
       @imagedata ||=
         begin
           if @header
-            raise "only non-interlaced mode is supported for imagedata" if @header.interlace != 0
+            #raise "only non-interlaced mode is supported for imagedata" if @header.interlace != 0
           else
             puts "[?] no image header, assuming non-interlaced RGB".yellow
           end
@@ -144,7 +156,8 @@ module ZPNG
       @scanlines ||=
         begin
           r = []
-          height.to_i.times do |i|
+          n = interlaced? ? adam7.scanlines_count : height.to_i
+          n.times do |i|
             r << ScanLine.new(self,i)
           end
           r.delete_if(&:bad?)
