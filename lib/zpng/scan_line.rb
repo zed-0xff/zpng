@@ -69,7 +69,7 @@ module ZPNG
 
     def to_s h={}
       @image.width.times.map do |i|
-        decode_pixel(i).to_pseudo(h)
+        decode_pixel(i).to_ascii(h)
       end.join
     end
 

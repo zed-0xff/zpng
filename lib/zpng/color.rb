@@ -62,7 +62,7 @@ module ZPNG
     end
 
     # try to convert to pseudographics
-    def to_pseudo h={}
+    def to_ascii h={}
       white   = h[:white]   || ' '
       black   = h[:black]   || '#'
       unknown = h[:unknown] || '?'

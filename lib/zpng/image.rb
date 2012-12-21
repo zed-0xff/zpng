@@ -166,7 +166,7 @@ module ZPNG
     def to_s h={}
       if scanlines.any?
         if interlaced?
-          height.times.map{ |y| width.times.map{ |x| self[x,y].to_pseudo(h) }.join }.join("\n")
+          height.times.map{ |y| width.times.map{ |x| self[x,y].to_ascii(h) }.join }.join("\n")
         else
           scanlines.map{ |l| l.to_s(h) }.join("\n")
         end

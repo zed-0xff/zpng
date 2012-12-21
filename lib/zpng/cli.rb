@@ -134,7 +134,14 @@ class ZPNG::CLI
   end
 
   def ascii
-    puts @img.to_s
+    @img.height.times do |y|
+      @img.width.times do |x|
+        c = @img[x,y].to_ascii
+        c *= 2 if @options[:wide]
+        print c
+      end
+      puts
+    end
   end
 
   def ansi
