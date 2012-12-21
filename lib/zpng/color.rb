@@ -9,8 +9,33 @@ module ZPNG
     alias :alpha :a
     def alpha= v; self.a = v; end
 
-    BLACK = Color.new(0,0,0,0xff)
-    WHITE = Color.new(0xff,0xff,0xff,0xff)
+    BLACK = Color.new(0  ,  0,  0, 255)
+    WHITE = Color.new(255,255,255, 255)
+
+    RED   = Color.new(255,  0,  0, 255)
+    GREEN = Color.new(0  ,255,  0, 255)
+    BLUE  = Color.new(0  ,  0,255, 255)
+
+    YELLOW= Color.new(255,255,  0, 255)
+    CYAN  = Color.new(  0,255,255, 255)
+    PURPLE= MAGENTA =
+            Color.new(255,  0,255, 255)
+
+    ANSI_COLORS = [:black, :red, :green, :yellow, :blue, :magenta, :cyan, :white]
+
+    # euclidian distance - http://en.wikipedia.org/wiki/Euclidean_distance
+    def euclidian other_color
+      r  = (self.r.to_i - other_color.r.to_i)**2
+      r += (self.g.to_i - other_color.g.to_i)**2
+      r += (self.b.to_i - other_color.b.to_i)**2
+      Math.sqrt r
+    end
+
+    def closest_ansi_color
+      a = ANSI_COLORS.map{|c| self.class.const_get(c.to_s.upcase) }
+      a.map!{ |c| self.euclidian(c) }
+      ANSI_COLORS[a.index(a.min)]
+    end
 
     def white?
       r == 0xff && g == 0xff && b == 0xff

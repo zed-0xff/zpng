@@ -137,6 +137,16 @@ class ZPNG::CLI
     puts @img.to_s
   end
 
+  def ansi
+    spc = @options[:wide] ? "  " : " "
+    @img.height.times do |y|
+      @img.width.times do |x|
+        print spc.background(@img[x,y].closest_ansi_color)
+      end
+      puts
+    end
+  end
+
   def ansi256
     require 'rainbow'
     spc = @options[:wide] ? "  " : " "
