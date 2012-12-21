@@ -8,7 +8,6 @@ class ZPNG::CLI
   ACTIONS = {
     'chunks'    => 'Show file chunks (default)',
     %w'i info'      => 'General image info (default)',
-    'ascii'     => 'Try to display image as ASCII (works best with monochrome images)',
     'scanlines' => 'Show scanlines info',
     'palette'   => 'Show palette'
   }
@@ -46,9 +45,24 @@ class ZPNG::CLI
         @actions << :unpack_imagedata
       end
 
+      opts.separator ""
       opts.on "-c", "--crop GEOMETRY", "crop image, {WIDTH}x{HEIGHT}+{X}+{Y},",
       "puts results on stdout unless --ascii given" do |x|
         @actions << [:crop, x]
+      end
+
+      opts.separator ""
+      opts.on "-A", '--ascii', 'Try to convert image to ASCII (works best with monochrome images)' do
+        @actions << :ascii
+      end
+      opts.on "-N", '--ansi', 'Try to display image as ANSI colored text' do
+        @actions << :ansi
+      end
+      opts.on "-2", '--256', 'Try to display image as 256-colored text' do
+        @actions << :ansi256
+      end
+      opts.on "-W", '--wide', 'Use 2 horizontal characters per one pixel' do
+        @options[:wide] = true
       end
     end
 
@@ -121,6 +135,17 @@ class ZPNG::CLI
 
   def ascii
     puts @img.to_s
+  end
+
+  def ansi256
+    require 'rainbow'
+    spc = @options[:wide] ? "  " : " "
+    @img.height.times do |y|
+      @img.width.times do |x|
+        print spc.background(@img[x,y].to_s)
+      end
+      puts
+    end
   end
 
   def scanlines

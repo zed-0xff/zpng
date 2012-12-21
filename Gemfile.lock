@@ -11,6 +11,7 @@ GEM
       rake
       rdoc
     json (1.7.5)
+    rainbow (1.1.4)
     rake (10.0.2)
     rdoc (3.12)
       json (~> 1.4)
@@ -31,4 +32,5 @@ DEPENDENCIES
   colorize
   hexdump
   jeweler (~> 1.8.4)
+  rainbow
   rspec (>= 2.8.0)
