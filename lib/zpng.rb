@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 require 'zlib'
 require 'stringio'
-require 'colorize'
+
+require 'zpng/string_ext'
 
 require 'zpng/color'
 require 'zpng/block'

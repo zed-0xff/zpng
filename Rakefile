@@ -86,8 +86,7 @@ Rake::Task[:console].clear
 # from /usr/local/lib64/ruby/gems/1.9.1/gems/jeweler-1.8.4/lib/jeweler/tasks.rb
 desc "Start IRB with all runtime dependencies loaded"
 task :console, [:script] do |t,args|
-  # TODO move to a command
-  dirs = ['ext', 'lib'].select { |dir| File.directory?(dir) }
+  dirs = ['./ext', './lib'].select { |dir| File.directory?(dir) }
 
   original_load_path = $LOAD_PATH
 
