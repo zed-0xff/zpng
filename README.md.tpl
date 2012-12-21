@@ -27,7 +27,7 @@ Usage
 
 source image: ![qr_rgb.png](https://github.com/zed-0xff/zpng/raw/master/samples/qr_rgb.png)
 
-% zpng --ascii qr_rgb.png
+% zpng --ascii --wide qr_rgb.png
 
 ### Scanlines
 
