@@ -125,22 +125,20 @@ module ZPNG
     def imagedata
       @imagedata ||=
         begin
-          if @header
-            #raise "only non-interlaced mode is supported for imagedata" if @header.interlace != 0
-          else
-            puts "[?] no image header, assuming non-interlaced RGB".yellow
-          end
+          puts "[?] no image header, assuming non-interlaced RGB".yellow unless @header
           data = @chunks.find_all{ |c| c.is_a?(Chunk::IDAT) }.map(&:data).join
           (data && data.size > 0) ? Zlib::Inflate.inflate(data) : ''
         end
     end
 
     def [] x, y
+      x,y = adam7.convert_coords(x,y) if interlaced?
       scanlines[y][x]
     end
 
     def []= x, y, newpixel
       decode_all_scanlines
+      x,y = adam7.convert_coords(x,y) if interlaced?
       scanlines[y][x] = newpixel
     end
 
@@ -167,7 +165,11 @@ module ZPNG
 
     def to_s h={}
       if scanlines.any?
-        scanlines.map{ |l| l.to_s(h) }.join("\n")
+        if interlaced?
+          height.times.map{ |y| width.times.map{ |x| self[x,y].to_pseudo(h) }.join }.join("\n")
+        else
+          scanlines.map{ |l| l.to_s(h) }.join("\n")
+        end
       else
         super()
       end

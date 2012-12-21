@@ -68,14 +68,8 @@ module ZPNG
     end
 
     def to_s h={}
-      white   = h[:white]   || ' '
-      black   = h[:black]   || '#'
-      unknown = h[:unknown] || '?'
-
       @image.width.times.map do |i|
-        px = decode_pixel(i)
-#        printf "[d] %08x %s %s\n", px.to_i, px.inspect, px.to_s unless px.black?
-        px.white?? white : (px.black?? black : unknown)
+        decode_pixel(i).to_pseudo(h)
       end.join
     end
 

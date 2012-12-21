@@ -36,6 +36,15 @@ module ZPNG
       "%02X%02X%02X" % [r,g,b]
     end
 
+    # try to convert to pseudographics
+    def to_pseudo h={}
+      white   = h[:white]   || ' '
+      black   = h[:black]   || '#'
+      unknown = h[:unknown] || '?'
+
+      self.white?? white : (self.black?? black : unknown)
+    end
+
     def to_i
       ((a||0) << 24) + ((r||0) << 16) + ((g||0) << 8) + (b||0)
     end
