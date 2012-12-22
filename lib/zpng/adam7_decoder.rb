@@ -1,21 +1,29 @@
 module ZPNG
   class Adam7Decoder
     attr_accessor :image
+    attr_reader :scanlines_count
 
-    def initialize image
-      @image = image
+    # http://en.wikipedia.org/wiki/Adam7_algorithm#Passes
+    def initialize img
+      @image = img
+      @widths = [
+        [(img.width/8.0).ceil]     * (img.height/8.0).ceil,     # pass1
+        [((img.width-4)/8.0).ceil] * (img.height/8.0).ceil,     # pass2
+        [(img.width/4.0).ceil]     * ((img.height-4)/8.0).ceil, # pass3
+        [((img.width-2)/4.0).ceil] * (img.height/4.0).ceil,     # pass4
+        [(img.width/2.0).ceil]     * ((img.height-2)/4.0).ceil, # pass5
+        [((img.width-1)/2.0).ceil] * (img.height/2.0).ceil,     # pass6
+        [img.width]                * ((img.height-1)/2.0).ceil  # pass7
+      ]
+      @scanlines_count = 0
+      # two leading zeroes added specially for convert_coords() code readability
+      @pass_starts = [0,0] + @widths.map(&:size).map{ |x| @scanlines_count+=x }
+      @widths.flatten!
     end
-
-    def scanlines_count
-      (15*image.height/8.0).ceil
-    end
-
-    WIDTHS = [1,1,2,2,2,4,4,4,4,4,4,8,8,8,8]
 
     # scanline width in pixels
     def scanline_width idx
-      #image.width/8*(2**(idx/2))
-      WIDTHS[idx*8/image.height]*(image.width/8)
+      @widths[idx]
     end
 
     # scanline size in bytes, INCLUDING leading filter byte
@@ -36,25 +44,25 @@ module ZPNG
 
       if y%2 == 1
         # 7th pass: last height/2 full scanlines
-        [x, y/2 + image.height*11/8]
+        [x, y/2 + @pass_starts[7]]
       elsif x%2 == 1 && y%2 == 0
         # 6th pass
-        [x/2, y/2 + image.height*7/8]
+        [x/2, y/2 + @pass_starts[6]]
       elsif x%8 == 0 && y%8 == 0
-        # 1st pass
+        # 1st pass, starts at 0
         [x/8, y/8]
       elsif x%8 == 4 && y%8 == 0
         # 2nd pass
-        [x/8, y/8 + image.height/8]
+        [x/8, y/8 + @pass_starts[2]]
       elsif x%4 == 0 && y%8 == 4
         # 3rd pass
-        [x/4, y/8 + image.height*2/8]
+        [x/4, y/8 + @pass_starts[3]]
       elsif x%4 == 2 && y%4 == 0
         # 4th pass
-        [x/4, y/4 + image.height*3/8]
+        [x/4, y/4 + @pass_starts[4]]
       elsif x%2 == 0 && y%4 == 2
         # 5th pass
-        [x/2, y/4 + image.height*5/8]
+        [x/2, y/4 + @pass_starts[5]]
       else
         raise "invalid coords"
       end

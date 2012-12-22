@@ -168,7 +168,16 @@ class ZPNG::CLI
   def scanlines
     @img.scanlines.each do |sl|
       p sl
-      puts Hexdump.dump(sl.raw_data) if @options[:verbose] > 0
+      case @options[:verbose]
+      when 1
+        Hexdump.dump(sl.raw_data)
+      when 2
+        Hexdump.dump(sl.decoded_bytes)
+      when 3..999
+        Hexdump.dump(sl.raw_data)
+        Hexdump.dump(sl.decoded_bytes)
+        puts
+      end
     end
   end
 

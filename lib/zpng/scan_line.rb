@@ -178,11 +178,8 @@ module ZPNG
           # number of bytes per complete pixel, rounding up to one
           bpp1 = (@bpp/8.0).ceil
 
-          # bytes in one scanline
-          nbytes = (image.width*@bpp/8.0).ceil
-
           s = ''
-          nbytes.times do |i|
+          (size-1).times do |i|
             b0 = (i-bpp1) >= 0 ? s[i-bpp1] : nil
             s[i] = decode_byte(i, b0, bpp1)
           end
