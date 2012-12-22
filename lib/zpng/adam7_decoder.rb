@@ -14,7 +14,7 @@ module ZPNG
         [(img.width/2.0).ceil]     * ((img.height-2)/4.0).ceil, # pass5
         [((img.width-1)/2.0).ceil] * (img.height/2.0).ceil,     # pass6
         [img.width]                * ((img.height-1)/2.0).ceil  # pass7
-      ]
+      ].map{ |x| x == [0] ? [] : x }
       @scanlines_count = 0
       # two leading zeroes added specially for convert_coords() code readability
       @pass_starts = [0,0] + @widths.map(&:size).map{ |x| @scanlines_count+=x }

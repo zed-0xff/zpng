@@ -28,7 +28,8 @@ describe ZPNG::Adam7Decoder do
       "16x16"=> 30,
       "8x9"  => 19,
       "9x8"  => 15,
-      "9x9"  => 19
+      "9x9"  => 19,
+      "1x1"  => 1,
     }.each do |dims, n|
       it "should be right for #{dims} image" do
         w,h = dims.split('x').map(&:to_i)
