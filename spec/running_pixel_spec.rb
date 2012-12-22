@@ -29,7 +29,7 @@ describe Image do
 
             s = '#'*16
             s[x] = ' '
-            img.to_s.should == s
+            img.to_ascii('# ').should == s
 
   #          fname = "out-#{x}-#{bpp}-#{color}.png"
   #          img.save fname

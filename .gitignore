@@ -9,3 +9,4 @@ doc
 pkg
 *.swp
 samples/png_suite
+tmp

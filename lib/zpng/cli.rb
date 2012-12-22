@@ -41,7 +41,7 @@ class ZPNG::CLI
       opts.on "-E", "--extract-chunk ID", "extract a single chunk" do |id|
         @actions << [:extract_chunk, id.to_i]
       end
-      opts.on "-U", "--unpack-imagedata", "unpack Image Data (IDAT) chunk(s), output to stdout" do
+      opts.on "-D", "--imagedata", "dump unpacked Image Data (IDAT) chunk(s) to stdout" do
         @actions << :unpack_imagedata
       end
 
@@ -166,7 +166,10 @@ class ZPNG::CLI
   end
 
   def scanlines
-    pp @img.scanlines
+    @img.scanlines.each do |sl|
+      p sl
+      puts Hexdump.dump(sl.raw_data) if @options[:verbose] > 0
+    end
   end
 
   def palette

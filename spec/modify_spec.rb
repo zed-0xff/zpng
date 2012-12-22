@@ -49,7 +49,7 @@ describe "ZPNG modify" do
         img.width.times do |x|
           img[x,0] = (x%2==0) ? ZPNG::Color::WHITE : ZPNG::Color::BLACK
         end
-        img.to_s(:white => '.', :black => '#').strip.should == ASCII_MODIFIED_QR.strip
+        img.to_ascii('#.').strip.should == ASCII_MODIFIED_QR.strip
       end
     end
   end

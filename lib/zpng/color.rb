@@ -23,6 +23,11 @@ module ZPNG
 
     ANSI_COLORS = [:black, :red, :green, :yellow, :blue, :magenta, :cyan, :white]
 
+    #ASCII_MAP = %q_ .`,-:;~"!<+*^(LJ=?vctsxj12FuoCeyPSah5wVmXA4G9$OR0MQNW#&%@_
+    #ASCII_MAP = %q_ .`,-:;~"!<+*^=VXMQNW#&%@_
+    #ASCII_MAP = %q_ .,:"!*=7FZVXM#%@_
+    ASCII_MAP = "        .......``,,,,---:::::;;;;~~\"\"\"\"\"!!!!!!<++*^^^(((LLJ=??vvv]ts[j1122FFuooCeyyPEah55333VVmmXA4G9$666666RRRRRR00MQQNNW####&&&&&%%%%%%%%@@@@@@@"
+
     # euclidian distance - http://en.wikipedia.org/wiki/Euclidean_distance
     def euclidian other_color
       r  = (self.r.to_i - other_color.r.to_i)**2
@@ -62,12 +67,8 @@ module ZPNG
     end
 
     # try to convert to pseudographics
-    def to_ascii h={}
-      white   = h[:white]   || ' '
-      black   = h[:black]   || '#'
-      unknown = h[:unknown] || '?'
-
-      self.white?? white : (self.black?? black : unknown)
+    def to_ascii map=ASCII_MAP
+      map[self.to_grayscale*(map.size-1)/255, 1]
     end
 
     def to_i

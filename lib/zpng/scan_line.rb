@@ -33,7 +33,6 @@ module ZPNG
         else
           STDERR.puts "[!] #{self.class}: ##@idx: no data at pos 0, scanline dropped".red
         end
-        @offset += 1
       end
     end
 
@@ -67,9 +66,9 @@ module ZPNG
       end
     end
 
-    def to_s h={}
+    def to_ascii *args
       @image.width.times.map do |i|
-        decode_pixel(i).to_ascii(h)
+        decode_pixel(i).to_ascii(*args)
       end.join
     end
 
@@ -173,7 +172,7 @@ module ZPNG
     end
 
     def decoded_bytes
-      raise if caller.size > 50
+      #raise if caller.size > 50
       @decoded_bytes ||=
         begin
           # number of bytes per complete pixel, rounding up to one
@@ -197,9 +196,13 @@ module ZPNG
       true
     end
 
+    def raw_data
+      @offset ? @image.imagedata[@offset, size] : ''
+    end
+
     private
     def decode_byte x, b0, bpp1
-      raw = @image.imagedata[@offset+x]
+      raw = @image.imagedata[@offset+x+1]
 
       unless raw
         STDERR.puts "[!] #{self.class}: ##@idx: no data at pos #{x}".red

@@ -165,12 +165,12 @@ module ZPNG
         end
     end
 
-    def to_s h={}
+    def to_ascii *args
       if scanlines.any?
         if interlaced?
-          height.times.map{ |y| width.times.map{ |x| self[x,y].to_ascii(h) }.join }.join("\n")
+          height.times.map{ |y| width.times.map{ |x| self[x,y].to_ascii(*args) }.join }.join("\n")
         else
-          scanlines.map{ |l| l.to_s(h) }.join("\n")
+          scanlines.map{ |l| l.to_ascii(*args) }.join("\n")
         end
       else
         super()
@@ -244,6 +244,7 @@ module ZPNG
 
     # returns new image
     def crop params
+      decode_all_scanlines
       # deep copy first, then crop!
       Marshal.load(Marshal.dump(self)).crop!(params)
     end

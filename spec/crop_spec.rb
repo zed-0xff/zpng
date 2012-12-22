@@ -69,24 +69,24 @@ describe Image do
 
       it "should extract left square" do
         img.crop! :x => 1, :y => 1, :width => 7, :height => 7
-        img.to_s(:white => '.', :black => '#').strip.should == QR_SQUARE.strip
+        img.to_ascii('#.').strip.should == QR_SQUARE.strip
       end
 
       it "should extract right square" do
         img.crop! :x => 27, :y => 1, :width => 7, :height => 7
-        img.to_s(:white => '.', :black => '#').strip.should == QR_SQUARE.strip
+        img.to_ascii('#.').strip.should == QR_SQUARE.strip
       end
 
       it "should extract bottom square" do
         img.crop! :x => 1, :y => 27, :width => 7, :height => 7
-        img.to_s(:white => '.', :black => '#').strip.should == QR_SQUARE.strip
+        img.to_ascii('#.').strip.should == QR_SQUARE.strip
       end
 
       it "keeps whole original image if crop is larger than image" do
         img2 = img.crop :x => 0, :y => 0, :width => 7000, :height => 7000
         img2.width.should  == img.width
         img2.height.should == img.height
-        img2.to_s.should   == img.to_s
+        img2.to_ascii.should == img.to_ascii
       end
     end
   end
