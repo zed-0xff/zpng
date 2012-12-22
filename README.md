@@ -23,7 +23,7 @@ Usage
         -S, --scanlines                  Show scanlines info
         -P, --palette                    Show palette
         -E, --extract-chunk ID           extract a single chunk
-        -U, --unpack-imagedata           unpack Image Data (IDAT) chunk(s), output to stdout
+        -D, --imagedata                  dump unpacked Image Data (IDAT) chunk(s) to stdout
     
         -c, --crop GEOMETRY              crop image, {WIDTH}x{HEIGHT}+{X}+{Y},
                                          puts results on stdout unless --ascii given
@@ -44,7 +44,7 @@ Usage
 
     # zpng --chunks qr_aux_chunks.png
 
-    [.] <Chunk #00 IHDR size=    13, crc=36a28ef4, idx=0, interlace=0, filter=0, compression=0, height=35, width=35, depth=1, color=0> CRC OK
+    [.] <Chunk #00 IHDR size=    13, crc=36a28ef4, width=35, height=35, depth=1, color=0, compression=0, filter=0, interlace=0, idx=0> CRC OK
     [.] <Chunk #01 gAMA size=     4, crc=0bfc6105 > CRC OK
     [.] <Chunk #02 sRGB size=     1, crc=aece1ce9 > CRC OK
     [.] <Chunk #03 cHRM size=    32, crc=9cba513c > CRC OK
@@ -100,41 +100,41 @@ source image: ![qr_rgb.png](https://github.com/zed-0xff/zpng/raw/master/samples/
 
     # zpng --scanlines qr_rgb.png
 
-    [#<ZPNG::ScanLine idx=0  offset=1   size=106 bpp=24 filter=1>,
-     #<ZPNG::ScanLine idx=1  offset=107 size=106 bpp=24 filter=4>,
-     #<ZPNG::ScanLine idx=2  offset=213 size=106 bpp=24 filter=4>,
-     #<ZPNG::ScanLine idx=3  offset=319 size=106 bpp=24 filter=4>,
-     #<ZPNG::ScanLine idx=4  offset=425 size=106 bpp=24 filter=2>,
-     #<ZPNG::ScanLine idx=5  offset=531 size=106 bpp=24 filter=2>,
-     #<ZPNG::ScanLine idx=6  offset=637 size=106 bpp=24 filter=4>,
-     #<ZPNG::ScanLine idx=7  offset=743 size=106 bpp=24 filter=0>,
-     #<ZPNG::ScanLine idx=8  offset=849 size=106 bpp=24 filter=1>,
-     #<ZPNG::ScanLine idx=9  offset=955 size=106 bpp=24 filter=0>,
-     #<ZPNG::ScanLine idx=10 offset=1061 size=106 bpp=24 filter=0>,
-     #<ZPNG::ScanLine idx=11 offset=1167 size=106 bpp=24 filter=0>,
-     #<ZPNG::ScanLine idx=12 offset=1273 size=106 bpp=24 filter=1>,
-     #<ZPNG::ScanLine idx=13 offset=1379 size=106 bpp=24 filter=2>,
-     #<ZPNG::ScanLine idx=14 offset=1485 size=106 bpp=24 filter=4>,
-     #<ZPNG::ScanLine idx=15 offset=1591 size=106 bpp=24 filter=0>,
-     #<ZPNG::ScanLine idx=16 offset=1697 size=106 bpp=24 filter=4>,
-     #<ZPNG::ScanLine idx=17 offset=1803 size=106 bpp=24 filter=0>,
-     #<ZPNG::ScanLine idx=18 offset=1909 size=106 bpp=24 filter=4>,
-     #<ZPNG::ScanLine idx=19 offset=2015 size=106 bpp=24 filter=4>,
-     #<ZPNG::ScanLine idx=20 offset=2121 size=106 bpp=24 filter=0>,
-     #<ZPNG::ScanLine idx=21 offset=2227 size=106 bpp=24 filter=1>,
-     #<ZPNG::ScanLine idx=22 offset=2333 size=106 bpp=24 filter=2>,
-     #<ZPNG::ScanLine idx=23 offset=2439 size=106 bpp=24 filter=0>,
-     #<ZPNG::ScanLine idx=24 offset=2545 size=106 bpp=24 filter=2>,
-     #<ZPNG::ScanLine idx=25 offset=2651 size=106 bpp=24 filter=1>,
-     #<ZPNG::ScanLine idx=26 offset=2757 size=106 bpp=24 filter=1>,
-     #<ZPNG::ScanLine idx=27 offset=2863 size=106 bpp=24 filter=4>,
-     #<ZPNG::ScanLine idx=28 offset=2969 size=106 bpp=24 filter=4>,
-     #<ZPNG::ScanLine idx=29 offset=3075 size=106 bpp=24 filter=4>,
-     #<ZPNG::ScanLine idx=30 offset=3181 size=106 bpp=24 filter=4>,
-     #<ZPNG::ScanLine idx=31 offset=3287 size=106 bpp=24 filter=2>,
-     #<ZPNG::ScanLine idx=32 offset=3393 size=106 bpp=24 filter=4>,
-     #<ZPNG::ScanLine idx=33 offset=3499 size=106 bpp=24 filter=4>,
-     #<ZPNG::ScanLine idx=34 offset=3605 size=106 bpp=24 filter=1>]
+    #<ZPNG::ScanLine idx=0  offset=0   size=106 bpp=24 filter=1>
+    #<ZPNG::ScanLine idx=1  offset=106 size=106 bpp=24 filter=4>
+    #<ZPNG::ScanLine idx=2  offset=212 size=106 bpp=24 filter=4>
+    #<ZPNG::ScanLine idx=3  offset=318 size=106 bpp=24 filter=4>
+    #<ZPNG::ScanLine idx=4  offset=424 size=106 bpp=24 filter=2>
+    #<ZPNG::ScanLine idx=5  offset=530 size=106 bpp=24 filter=2>
+    #<ZPNG::ScanLine idx=6  offset=636 size=106 bpp=24 filter=4>
+    #<ZPNG::ScanLine idx=7  offset=742 size=106 bpp=24 filter=0>
+    #<ZPNG::ScanLine idx=8  offset=848 size=106 bpp=24 filter=1>
+    #<ZPNG::ScanLine idx=9  offset=954 size=106 bpp=24 filter=0>
+    #<ZPNG::ScanLine idx=10 offset=1060 size=106 bpp=24 filter=0>
+    #<ZPNG::ScanLine idx=11 offset=1166 size=106 bpp=24 filter=0>
+    #<ZPNG::ScanLine idx=12 offset=1272 size=106 bpp=24 filter=1>
+    #<ZPNG::ScanLine idx=13 offset=1378 size=106 bpp=24 filter=2>
+    #<ZPNG::ScanLine idx=14 offset=1484 size=106 bpp=24 filter=4>
+    #<ZPNG::ScanLine idx=15 offset=1590 size=106 bpp=24 filter=0>
+    #<ZPNG::ScanLine idx=16 offset=1696 size=106 bpp=24 filter=4>
+    #<ZPNG::ScanLine idx=17 offset=1802 size=106 bpp=24 filter=0>
+    #<ZPNG::ScanLine idx=18 offset=1908 size=106 bpp=24 filter=4>
+    #<ZPNG::ScanLine idx=19 offset=2014 size=106 bpp=24 filter=4>
+    #<ZPNG::ScanLine idx=20 offset=2120 size=106 bpp=24 filter=0>
+    #<ZPNG::ScanLine idx=21 offset=2226 size=106 bpp=24 filter=1>
+    #<ZPNG::ScanLine idx=22 offset=2332 size=106 bpp=24 filter=2>
+    #<ZPNG::ScanLine idx=23 offset=2438 size=106 bpp=24 filter=0>
+    #<ZPNG::ScanLine idx=24 offset=2544 size=106 bpp=24 filter=2>
+    #<ZPNG::ScanLine idx=25 offset=2650 size=106 bpp=24 filter=1>
+    #<ZPNG::ScanLine idx=26 offset=2756 size=106 bpp=24 filter=1>
+    #<ZPNG::ScanLine idx=27 offset=2862 size=106 bpp=24 filter=4>
+    #<ZPNG::ScanLine idx=28 offset=2968 size=106 bpp=24 filter=4>
+    #<ZPNG::ScanLine idx=29 offset=3074 size=106 bpp=24 filter=4>
+    #<ZPNG::ScanLine idx=30 offset=3180 size=106 bpp=24 filter=4>
+    #<ZPNG::ScanLine idx=31 offset=3286 size=106 bpp=24 filter=2>
+    #<ZPNG::ScanLine idx=32 offset=3392 size=106 bpp=24 filter=4>
+    #<ZPNG::ScanLine idx=33 offset=3498 size=106 bpp=24 filter=4>
+    #<ZPNG::ScanLine idx=34 offset=3604 size=106 bpp=24 filter=1>
 
 ### Palette
 

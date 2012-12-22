@@ -26,7 +26,17 @@ module ZPNG
     #ASCII_MAP = %q_ .`,-:;~"!<+*^(LJ=?vctsxj12FuoCeyPSah5wVmXA4G9$OR0MQNW#&%@_
     #ASCII_MAP = %q_ .`,-:;~"!<+*^=VXMQNW#&%@_
     #ASCII_MAP = %q_ .,:"!*=7FZVXM#%@_
-    ASCII_MAP = "        .......``,,,,---:::::;;;;~~\"\"\"\"\"!!!!!!<++*^^^(((LLJ=??vvv]ts[j1122FFuooCeyyPEah55333VVmmXA4G9$666666RRRRRR00MQQNNW####&&&&&%%%%%%%%@@@@@@@"
+
+    # see misc/gen_ascii_map.rb
+    ASCII_MAP =
+      ["        '''''''```,,",
+       ",,---:::::;;;;~~\"\"\"\"",
+       "\"!!!!!!<++*^^^(((LLJ",
+       "=??vvv]ts[j1122FFuoo",
+       "CeyyPEah55333VVmmXA4",
+       "G9$666666RRRRRR00MQQ",
+       "NNW####&&&&&%%%%%%%%",
+       "@@@@@@@"].join
 
     # euclidian distance - http://en.wikipedia.org/wiki/Euclidean_distance
     def euclidian other_color

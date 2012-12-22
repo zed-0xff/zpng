@@ -3,6 +3,8 @@ module ZPNG
     attr_accessor :data, :header, :chunks, :scanlines, :imagedata, :palette
     alias :hdr :header
 
+    include DeepCopyable
+
     PNG_HDR = "\x89PNG\x0d\x0a\x1a\x0a"
 
     def initialize x
@@ -246,7 +248,38 @@ module ZPNG
     def crop params
       decode_all_scanlines
       # deep copy first, then crop!
-      Marshal.load(Marshal.dump(self)).crop!(params)
+      deep_copy.crop!(params)
+    end
+
+    def each_pixel &block
+      height.times do |y|
+        width.times do |x|
+          yield(self[x,y], x, y)
+        end
+      end
+    end
+
+    # returns new deinterlaced image if deinterlaced
+    # OR returns self if no need to deinterlace
+    def deinterlace
+      return self unless interlaced?
+      require 'pp'
+      pp chunks
+
+      # copy all but 'interlace' header params
+      h = Hash[*%w'width height depth color compression filter'.map{ |k| [k.to_sym, hdr.send(k)] }.flatten]
+      new_img = Image.new h
+      chunks.each do |chunk|
+        next if chunk.is_a?(Chunk::IHDR)
+        next if chunk.is_a?(Chunk::IDAT)
+        next if chunk.is_a?(Chunk::IEND)
+        new_img.chunks << chunk.deep_copy
+      end
+      each_pixel do |c,x,y|
+        new_img[x,y] = c
+      end
+      p new_img.scanlines
+      new_img
     end
   end
 end

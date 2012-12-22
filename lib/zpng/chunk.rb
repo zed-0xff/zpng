@@ -2,6 +2,8 @@ module ZPNG
   class Chunk
     attr_accessor :size, :type, :data, :crc, :idx
 
+    include DeepCopyable
+
     def self.from_stream io
       size, type = io.read(8).unpack('Na4')
       io.seek(-8,IO::SEEK_CUR)

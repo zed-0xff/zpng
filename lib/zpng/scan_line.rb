@@ -21,6 +21,7 @@ module ZPNG
       if @image.new?
         @decoded_bytes = "\x00" * (size-1)
         @filter = FILTER_NONE
+        @offset = idx*size
       else
         @offset =
           if image.interlaced?

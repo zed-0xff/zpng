@@ -3,6 +3,7 @@ require 'zlib'
 require 'stringio'
 
 require 'zpng/string_ext'
+require 'zpng/deep_copyable'
 
 require 'zpng/color'
 require 'zpng/block'
