@@ -5,17 +5,18 @@
 
 Gem::Specification.new do |s|
   s.name = "zpng"
-  s.version = "0.1.2"
+  s.version = "0.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2012-12-21"
+  s.date = "2012-12-22"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["zpng"]
   s.extra_rdoc_files = [
     "LICENSE.txt",
     "README.md",
-    "README.md.tpl"
+    "README.md.tpl",
+    "TODO"
   ]
   s.files = [
     ".document",
@@ -26,6 +27,7 @@ Gem::Specification.new do |s|
     "README.md",
     "README.md.tpl",
     "Rakefile",
+    "TODO",
     "VERSION",
     "bin/zpng",
     "lib/zpng.rb",
@@ -34,9 +36,12 @@ Gem::Specification.new do |s|
     "lib/zpng/chunk.rb",
     "lib/zpng/cli.rb",
     "lib/zpng/color.rb",
+    "lib/zpng/deep_copyable.rb",
     "lib/zpng/image.rb",
     "lib/zpng/scan_line.rb",
     "lib/zpng/string_ext.rb",
+    "misc/chars.png",
+    "misc/gen_ascii_map.rb",
     "samples/captcha_4bpp.png",
     "samples/modify.rb",
     "samples/qr_aux_chunks.png",
@@ -47,6 +52,7 @@ Gem::Specification.new do |s|
     "samples/qr_plte_bw.png",
     "samples/qr_rgb.png",
     "samples/qr_rgba.png",
+    "spec/adam7_spec.rb",
     "spec/ascii_spec.rb",
     "spec/color_spec.rb",
     "spec/create_image_spec.rb",
