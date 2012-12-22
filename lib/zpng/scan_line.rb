@@ -152,8 +152,13 @@ module ZPNG
           # RGB
           return Color.new(*raw.unpack('C3'))
         when 32
-          # RGBA
-          return Color.new(*raw.unpack('C4'))
+          if image.grayscale? && image.alpha_used?
+            # 16-bit grayscale + 16-bit alpha
+            raw.unpack 'n2'
+          else
+            # RGBA
+            return Color.new(*raw.unpack('C4'))
+          end
         when 48
           # RGB 16 bits per sample
           return Color.new(*raw.unpack('n3'), :depth => 16)
