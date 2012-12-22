@@ -142,27 +142,34 @@ module ZPNG
         when 8
           [raw.ord, nil]
         when 16
-          raw.unpack 'C2'
+          if image.alpha_used?
+            raw.unpack 'C2'
+          else
+            # 16-bit grayscale
+            raw.unpack 'n'
+          end
         when 24
           # RGB
           return Color.new(*raw.unpack('C3'))
         when 32
           # RGBA
           return Color.new(*raw.unpack('C4'))
+        when 48
+          # RGB 16 bits per sample
+          return Color.new(*raw.unpack('n3'), :depth => 16)
+        when 64
+          # RGB 16 bits per sample + 16-bit alpha
+          return Color.new(*raw.unpack('n4'), :depth => 16, :alpha_depth => 16)
         else
           raise "unexpected bpp #{@bpp}"
         end
 
       if image.grayscale?
-        if [1,2,4].include?(@bpp)
-          #color should be extended to a 8-bit range
-          if color%2 == 0
-            color <<= (8-@bpp)
-          else
-            (8-@bpp).times{ color = color*2 + 1 }
-          end
-        end
-        Color.from_grayscale(color, alpha)
+        Color.from_grayscale(color,
+                             :alpha => alpha,
+                             :depth => image.hdr.depth,
+                             :alpha_depth => image.alpha_used? ? image.hdr.depth : 0
+                            )
       elsif image.palette
         color = image.palette[color]
         color.alpha = alpha

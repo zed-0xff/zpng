@@ -74,7 +74,10 @@ class ZPNG::CLI
     @actions = DEFAULT_ACTIONS if @actions.empty?
 
     argv.each_with_index do |fname,idx|
-      @need_fname_header = (argv.size > 1)
+      if argv.size > 1 && @options[:verbose] >= 0
+        puts if idx > 0
+        puts "[.] #{fname}".color(:green)
+      end
       @file_idx  = idx
       @file_name = fname
 
@@ -124,7 +127,7 @@ class ZPNG::CLI
   end
 
   def info
-    puts "[.] image size #{@img.width || '?'}x#{@img.height || '?'}"
+    puts "[.] image size #{@img.width || '?'}x#{@img.height || '?'}, bpp=#{@img.bpp}"
     puts "[.] uncompressed imagedata size = #{@img.imagedata.size} bytes"
     puts "[.] palette = #{@img.palette}" if @img.palette
   end
@@ -148,7 +151,7 @@ class ZPNG::CLI
     spc = @options[:wide] ? "  " : " "
     @img.height.times do |y|
       @img.width.times do |x|
-        print spc.background(@img[x,y].closest_ansi_color)
+        print spc.background(@img[x,y].to_ansi)
       end
       puts
     end
@@ -159,7 +162,7 @@ class ZPNG::CLI
     spc = @options[:wide] ? "  " : " "
     @img.height.times do |y|
       @img.width.times do |x|
-        print spc.background(@img[x,y].to_s)
+        print spc.background(@img[x,y].to_html)
       end
       puts
     end

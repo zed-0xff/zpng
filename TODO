@@ -1,0 +1,10 @@
+ways to hide info in PNG:
+ * IHDR: longer than 13 bytes
+ * IEND:
+    * longer than  0 bytes
+    * data after IEND
+ * TEXT chunks
+ * zTXT chunks
+ * IDAT:
+    * data after last scanline
+    * last bits in scanline when bpp%8 != 0

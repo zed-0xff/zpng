@@ -1,25 +1,36 @@
 module ZPNG
-  class Color < Struct.new(:r,:g,:b,:a)
+  class Color
+    attr_accessor :r, :g, :b, :a
+    attr_accessor :depth, :alpha_depth
 
-    def initialize *args
-      super
-      self.a ||= 0xff
+    include DeepCopyable
+
+    def initialize *a
+      h = a.last.is_a?(Hash) ? a.pop : {}
+      @r,@g,@b,@a = *a
+
+      # default ALPHA = 0xff - opaque
+      @a ||= h[:alpha] || 0xff
+
+      # default sample depth for r,g,b and alpha = 8 bits
+      @depth       = h[:depth]       || 8
+      @alpha_depth = h[:alpha_depth] || @depth
     end
 
     alias :alpha :a
-    def alpha= v; self.a = v; end
+    def alpha= a; @a=a; end
 
-    BLACK = Color.new(0  ,  0,  0, 255)
-    WHITE = Color.new(255,255,255, 255)
+    BLACK = Color.new(0  ,  0,  0)
+    WHITE = Color.new(255,255,255)
 
-    RED   = Color.new(255,  0,  0, 255)
-    GREEN = Color.new(0  ,255,  0, 255)
-    BLUE  = Color.new(0  ,  0,255, 255)
+    RED   = Color.new(255,  0,  0)
+    GREEN = Color.new(0  ,255,  0)
+    BLUE  = Color.new(0  ,  0,255)
 
-    YELLOW= Color.new(255,255,  0, 255)
-    CYAN  = Color.new(  0,255,255, 255)
+    YELLOW= Color.new(255,255,  0)
+    CYAN  = Color.new(  0,255,255)
     PURPLE= MAGENTA =
-            Color.new(255,  0,255, 255)
+            Color.new(255,  0,255)
 
     ANSI_COLORS = [:black, :red, :green, :yellow, :blue, :magenta, :cyan, :white]
 
@@ -46,12 +57,6 @@ module ZPNG
       Math.sqrt r
     end
 
-    def closest_ansi_color
-      a = ANSI_COLORS.map{|c| self.class.const_get(c.to_s.upcase) }
-      a.map!{ |c| self.euclidian(c) }
-      ANSI_COLORS[a.index(a.min)]
-    end
-
     def white?
       r == 0xff && g == 0xff && b == 0xff
     end
@@ -68,38 +73,79 @@ module ZPNG
       (r+g+b)/3
     end
 
-    def self.from_grayscale value, alpha = nil
-      Color.new value,value,value, alpha
+    def self.from_grayscale value, alpha_or_hash = nil
+      Color.new value,value,value, alpha_or_hash
     end
 
     def to_s
       "%02X%02X%02X" % [r,g,b]
     end
 
+    ########################################################
+
     # try to convert to pseudographics
     def to_ascii map=ASCII_MAP
-      map[self.to_grayscale*(map.size-1)/255, 1]
+      #p self
+      map[self.to_grayscale*(map.size-1)/(2**@depth-1), 1]
     end
+
+    def to_ansi
+      return to_depth(8).to_ansi if depth != 8
+      a = ANSI_COLORS.map{|c| self.class.const_get(c.to_s.upcase) }
+      a.map!{ |c| self.euclidian(c) }
+      ANSI_COLORS[a.index(a.min)]
+    end
+
+    def to_css
+      return to_depth(8).to_css if depth != 8
+      "#%02X%02X%02X" % [r,g,b]
+    end
+    alias :to_html :to_css
+
+    ########################################################
 
     def to_i
       ((a||0) << 24) + ((r||0) << 16) + ((g||0) << 8) + (b||0)
     end
 
-    def inspect
-      if r && g && b && a
-        "#<ZPNG::Color #%02x%02x%02x a=%d>" % [r,g,b,a]
+    # change bit depth, return new Color
+    def to_depth new_depth
+      c = Color.new :depth => new_depth
+      if new_depth > self.depth
+        %w'r g b'.each do |part|
+          color = self.send(part)
+          if color%2 == 0
+            color <<= (new_depth-self.depth)
+          else
+            (new_depth-self.depth).times{ color = color*2 + 1 }
+          end
+          c.send("#{part}=", color)
+        end
       else
-        rs = r ? "%02x" % r : "??"
-        gs = g ? "%02x" % g : "??"
-        bs = b ? "%02x" % b : "??"
-        if a
-          # alpha is non-NULL
-          "#<ZPNG::Color #%s%s%s a=%d>" % [rs,gs,bs,a]
-        else
-          # alpha is NULL
-          "#<ZPNG::Color #%s%s%s>" % [rs,gs,bs]
+        # new_depth < self.depth
+        %w'r g b'.each do |part|
+          c.send("#{part}=", self.send(part)>>(self.depth-new_depth))
         end
       end
+      c
+    end
+
+    def inspect
+      s = "#<ZPNG::Color"
+      if depth == 16
+        s << " r=" + (r ? "%04x" % r : "????")
+        s << " g=" + (g ? "%04x" % g : "????")
+        s << " b=" + (b ? "%04x" % b : "????")
+      else
+        s << " #"
+        s << (r ? "%02x" % r : "??")
+        s << (g ? "%02x" % g : "??")
+        s << (b ? "%02x" % b : "??")
+      end
+      s << " a=#{a}" if a && alpha_depth != 0
+      s << " depth=#{depth}" if depth != 8
+      s << " alpha_depth=#{alpha_depth}" if alpha_depth != 8 && alpha_depth != 0
+      s << ">"
     end
   end
 end

@@ -126,6 +126,10 @@ module ZPNG
       @header && @header.interlace != 0
     end
 
+    def alpha_used?
+      @header && @header.alpha_used?
+    end
+
     def imagedata
       @imagedata ||=
         begin
