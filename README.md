@@ -35,10 +35,37 @@ Usage
 
 ### Info
 
-    # zpng --info qr_rgb.png
+    # zpng qr_rgb.png
 
-    [.] image size 35x35
+    [.] image size 35x35, bpp=24
     [.] uncompressed imagedata size = 3710 bytes
+    [.] <Chunk #00 IHDR size=    13, crc=91bb240e, width=35, height=35, depth=8, color=2, compression=0, filter=0, interlace=0, idx=0> CRC OK
+    [.] <Chunk #01 sRGB size=     1, crc=aece1ce9 > CRC OK
+    [.] <Chunk #02 IDAT size=   399, crc=59790716 > CRC OK
+    [.] <Chunk #03 IEND size=     0, crc=ae426082 > CRC OK
+
+### Info (verbose)
+
+    # zpng -v qr_rgb.png
+
+    [.] image size 35x35, bpp=24
+    [.] uncompressed imagedata size = 3710 bytes
+        01 ff ff ff 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+        00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................| + 3678 bytes
+    
+    [.] <Chunk #00 IHDR size=    13, crc=91bb240e, width=35, height=35, depth=8, color=2, compression=0, filter=0, interlace=0, idx=0> CRC OK
+        00 00 00 23 00 00 00 23  08 02 00 00 00           |...#...#.....   |
+    
+    [.] <Chunk #01 sRGB size=     1, crc=aece1ce9 > CRC OK
+        00                                                |.               |
+    
+    [.] <Chunk #02 IDAT size=   399, crc=59790716 > CRC OK
+        48 c7 bd 56 41 12 c4 20  08 d3 8e ff ff b2 7b 70  |H..VA.. ......{p|
+        86 d2 24 44 db c3 7a d8  d9 b6 08 18 03 a1 cf 39  |..$D..z........9| + 367 bytes
+    
+    [.] <Chunk #03 IEND size=     0, crc=ae426082 > CRC OK
+
+( add more `-v`'s for even more verbose output)
 
 ### Chunks
 
@@ -141,7 +168,8 @@ source image: ![qr_rgb.png](https://github.com/zed-0xff/zpng/raw/master/samples/
     # zpng --palette qr_plte_bw.png
 
     <Chunk #02 PLTE size=     6, crc=55c2d37e >
-    00000000  ff ff ff 00 00 00                                      |......|
+      color   #0:  ff ff ff  |...|
+      color   #1:  00 00 00  |...|
 
 
 ## Image manipulation

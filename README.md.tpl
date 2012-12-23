@@ -17,7 +17,13 @@ Usage
 
 ### Info
 
-% zpng --info qr_rgb.png
+% zpng qr_rgb.png
+
+### Info (verbose)
+
+% zpng -v qr_rgb.png
+
+( add more `-v`'s for even more verbose output)
 
 ### Chunks
 

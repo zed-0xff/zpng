@@ -100,11 +100,6 @@ module ZPNG
     end
 
     public
-    def dump
-      @chunks.each do |chunk|
-        puts "[.] #{chunk.inspect} #{chunk.crc_ok? ? 'CRC OK'.green : 'CRC ERROR'.red}"
-      end
-    end
 
     def bpp
       @header && @header.bpp

@@ -8,3 +8,6 @@ ways to hide info in PNG:
  * IDAT:
     * data after last scanline
     * last bits in scanline when bpp%8 != 0
+ * PLTE:
+    * raw letters
+    * stegano

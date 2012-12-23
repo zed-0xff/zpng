@@ -20,35 +20,42 @@ module ZPNG
 
         size = data.size-offset if size+offset > data.size
 
-        r = ''; prevrow = ''; c = nil
+        r = ''; prevhex = ''; c = nil; prevdup = false
         while true
-          ascii = ''; row = ''
+          ascii = ''; hex = ''
           width.times do |i|
-            row << ' ' if i%8==0 && i>0
+            hex << ' ' if i%8==0 && i>0
             if c = ((size > 0) && data[offset+i])
-              row << "%02x " % c.ord
+              hex << "%02x " % c.ord
               ascii << ((32..126).include?(c.ord) ? c : '.')
             else
-              row << '   '
+              hex << '   '
               ascii << ' '
             end
             size-=1
           end
 
-          row << ' |' << ascii << "|"
-          yield(row, offset+add, ascii) if block_given?
-
-          if h[:dedup] && row == prevrow
-            r << "*\n" unless r[-2,2] == "*\n"
+          if h[:dedup] && hex == prevhex
+            row = "*"
+            yield(row, offset+add, ascii) if block_given?
+            r << row << "\n" unless prevdup
+            prevdup = true
           else
-            r << "%08x: " % (offset + add) if h[:show_offset]
+            row = (h[:show_offset] ?  ("%08x: " % (offset + add)) : '') + hex + ' |' + ascii + "|"
+            yield(row, offset+add, ascii) if block_given?
             r << row << "\n"
+            prevdup = false
           end
+
           offset += width
-          prevrow = row
+          prevhex = hex
           break if size <= 0
         end
-        r << "%08x: " % (offset + add) if h[:show_offset] && r[-2..-1] == "*\n"
+        if h[:show_offset] && prevdup
+          row = "%08x: " % (offset + add)
+          yield(row) if block_given?
+          r << row
+        end
         r.chomp + tail
       end
     end
