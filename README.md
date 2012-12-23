@@ -16,10 +16,9 @@ Usage
     # zpng -h
 
     Usage: zpng [options] filename.png
-        -v, --verbose                    Run verbosely (can be used multiple times)
-        -q, --quiet                      Silent any warnings (can be used multiple times)
-        -C, --chunks                     Show file chunks (default)
+    
         -i, --info                       General image info (default)
+        -C, --chunk(s) [ID]              Show chunks (default) or single chunk by its #
         -S, --scanlines                  Show scanlines info
         -P, --palette                    Show palette
         -E, --extract-chunk ID           extract a single chunk
@@ -32,6 +31,9 @@ Usage
         -N, --ansi                       Try to display image as ANSI colored text
         -2, --256                        Try to display image as 256-colored text
         -W, --wide                       Use 2 horizontal characters per one pixel
+    
+        -v, --verbose                    Run verbosely (can be used multiple times)
+        -q, --quiet                      Silent any warnings (can be used multiple times)
 
 ### Info
 

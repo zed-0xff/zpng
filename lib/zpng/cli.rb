@@ -6,16 +6,18 @@ module ZPNG
   class CLI
     include Hexdump
 
-    ACTIONS = {
-      'chunks'    => 'Show file chunks (default)',
-      %w'i info'      => 'General image info (default)',
-      'scanlines' => 'Show scanlines info',
-      'palette'   => 'Show palette'
-    }
     DEFAULT_ACTIONS = %w'info chunks'
 
     def initialize argv = ARGV
-      @argv = argv
+      # hack #1: allow --chunk as well as --chunks
+      @argv = argv.map{ |x| x.sub(/^--chunks?/,'--chunk(s)') }
+
+      # hack #2: allow --chunk(s) followed by a non-number, like "zpng --chunks fname.png"
+      @argv.each_cons(2) do |a,b|
+        if a == "--chunk(s)" && b !~ /^\d+$/
+          a<<"=-1"
+        end
+      end
     end
 
     def run
@@ -23,24 +25,18 @@ module ZPNG
       @options = { :verbose => 0 }
       optparser = OptionParser.new do |opts|
         opts.banner = "Usage: zpng [options] filename.png"
+        opts.separator ""
 
-        opts.on "-v", "--verbose", "Run verbosely (can be used multiple times)" do |v|
-          @options[:verbose] += 1
+        opts.on("-i", "--info", "General image info (default)"){ @actions << :info }
+        opts.on("-C", "--chunk(s) [ID]", Integer, "Show chunks (default) or single chunk by its #") do |id|
+          id = nil if id == -1
+          @actions << [:chunks, id]
         end
-        opts.on "-q", "--quiet", "Silent any warnings (can be used multiple times)" do |v|
-          @options[:verbose] -= 1
-        end
+        opts.on("-S", "--scanlines", "Show scanlines info"){ @actions << :scanlines }
+        opts.on("-P", "--palette", "Show palette"){ @actions << :palette }
 
-        ACTIONS.each do |t,desc|
-          if t.is_a?(Array)
-            opts.on *[ "-#{t[0]}", "--#{t[1]}", desc, eval("lambda{ |_| @actions << :#{t[1]} }") ]
-          else
-            opts.on *[ "-#{t[0].upcase}", "--#{t}", desc, eval("lambda{ |_| @actions << :#{t} }") ]
-          end
-        end
-
-        opts.on "-E", "--extract-chunk ID", "extract a single chunk" do |id|
-          @actions << [:extract_chunk, id.to_i]
+        opts.on "-E", "--extract-chunk ID", Integer, "extract a single chunk" do |id|
+          @actions << [:extract_chunk, id]
         end
         opts.on "-D", "--imagedata", "dump unpacked Image Data (IDAT) chunk(s) to stdout" do
           @actions << :unpack_imagedata
@@ -64,6 +60,14 @@ module ZPNG
         end
         opts.on "-W", '--wide', 'Use 2 horizontal characters per one pixel' do
           @options[:wide] = true
+        end
+
+        opts.separator ""
+        opts.on "-v", "--verbose", "Run verbosely (can be used multiple times)" do |v|
+          @options[:verbose] += 1
+        end
+        opts.on "-q", "--quiet", "Silent any warnings (can be used multiple times)" do |v|
+          @options[:verbose] -= 1
         end
       end
 
@@ -151,8 +155,9 @@ module ZPNG
       end
     end
 
-    def chunks
+    def chunks idx=nil
       @img.chunks.each do |chunk|
+        next if idx && chunk.idx != idx
         colored_type = chunk.type.magenta
         colored_crc  = chunk.crc_ok? ? 'CRC OK'.green : 'CRC ERROR'.red
         puts "[.] #{chunk.inspect.sub(chunk.type, colored_type)} #{colored_crc}"
