@@ -54,7 +54,7 @@ module ZPNG
       @data || ''
     end
 
-    def inspect
+    def inspect verbosity = 10
       size = @size ? sprintf("%6d",@size) : sprintf("%6s","???")
       crc  = @crc  ? sprintf("%08x",@crc) : sprintf("%8s","???")
       type = @type.to_s.gsub(/[^0-9a-z]/i){ |x| sprintf("\\x%02X",x.ord) }
@@ -180,10 +180,11 @@ module ZPNG
         (@color & ALPHA_USED) != 0
       end
 
-      def inspect
+      def inspect verbosity = 10
+        vars = instance_variables - [:@type, :@crc, :@data, :@size]
+        vars -= [:@idx] if verbosity <= 0
         super.sub(/ *>$/,'') + ", " +
-          (instance_variables-[:@type, :@crc, :@data, :@size]).
-          map{ |var| "#{var.to_s.tr('@','')}=#{instance_variable_get(var)}" }.
+          vars.map{ |var| "#{var.to_s.tr('@','')}=#{instance_variable_get(var)}" }.
           join(", ") + ">"
       end
     end
@@ -229,24 +230,5 @@ module ZPNG
     class IDAT < Chunk; end
     class IEND < Chunk; end
 
-    class ZTXT < Chunk
-      attr_accessor :keyword, :comp_method, :text
-      def initialize *args
-        super
-        @keyword,@comp_method,@text = data.unpack('Z*Ca*')
-        if @text
-          @text = Zlib::Inflate.inflate(@text)
-        end
-      end
-      def inspect
-        super.sub(/ *>$/,'') + ", " +
-          (instance_variables-[:@type, :@crc, :@data, :@size]).
-          map do |var|
-            t = instance_variable_get(var).to_s
-            t = t[0..10] + "..." if t.size > 10
-            "#{var.to_s.tr('@','')}=#{t}"
-          end.join(", ") + ">"
-      end
-    end
   end
 end

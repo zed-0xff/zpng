@@ -6,7 +6,7 @@ module ZPNG
   class CLI
     include Hexdump
 
-    DEFAULT_ACTIONS = %w'info chunks'
+    DEFAULT_ACTIONS = %w'info metadata chunks'
 
     def initialize argv = ARGV
       # hack #1: allow --chunk as well as --chunks
@@ -28,10 +28,13 @@ module ZPNG
         opts.separator ""
 
         opts.on("-i", "--info", "General image info (default)"){ @actions << :info }
-        opts.on("-C", "--chunk(s) [ID]", Integer, "Show chunks (default) or single chunk by its #") do |id|
+        opts.on("-c", "--chunk(s) [ID]", Integer, "Show chunks (default) or single chunk by its #") do |id|
           id = nil if id == -1
           @actions << [:chunks, id]
         end
+        opts.on("-m", "--metadata", "Show image metadata, if any (default)"){ @actions << :metadata }
+
+        opts.separator ""
         opts.on("-S", "--scanlines", "Show scanlines info"){ @actions << :scanlines }
         opts.on("-P", "--palette", "Show palette"){ @actions << :palette }
 
@@ -43,7 +46,7 @@ module ZPNG
         end
 
         opts.separator ""
-        opts.on "-c", "--crop GEOMETRY", "crop image, {WIDTH}x{HEIGHT}+{X}+{Y},",
+        opts.on "-C", "--crop GEOMETRY", "crop image, {WIDTH}x{HEIGHT}+{X}+{Y},",
         "puts results on stdout unless --ascii given" do |x|
           @actions << [:crop, x]
         end
@@ -131,6 +134,22 @@ module ZPNG
       @img = Image.load fname
     end
 
+    def metadata
+      return if @img.metadata.empty?
+      puts "[.] metadata:"
+      @img.metadata.each do |k,v,h|
+        if h.keys.sort == [:keyword, :text]
+          v.gsub!(/[\n\r]+/, "\n"+" "*18)
+          printf "    %-11s : %s\n", k, v.gray
+        else
+          printf "    %s (%s: %s):", k, h[:language], h[:translated_keyword]
+          v.gsub!(/[\n\r]+/, "\n"+" "*18)
+          printf "\n%s%s\n", " "*18, v.gray
+        end
+      end
+      puts
+    end
+
     def info
       puts "[.] image size #{@img.width || '?'}x#{@img.height || '?'}, bpp=#{@img.bpp}"
       puts "[.] palette = #{@img.palette}" if @img.palette
@@ -160,7 +179,7 @@ module ZPNG
         next if idx && chunk.idx != idx
         colored_type = chunk.type.magenta
         colored_crc  = chunk.crc_ok? ? 'CRC OK'.green : 'CRC ERROR'.red
-        puts "[.] #{chunk.inspect.sub(chunk.type, colored_type)} #{colored_crc}"
+        puts "[.] #{chunk.inspect(@options[:verbose]).sub(chunk.type, colored_type)} #{colored_crc}"
 
         _conditional_hexdump(chunk.data) unless chunk.size == 0
       end

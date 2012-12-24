@@ -5,9 +5,12 @@ ways to hide info in PNG:
     * data after IEND
  * TEXT chunks
  * zTXT chunks
+    * comp_method
  * IDAT:
     * data after last scanline
     * last bits in scanline when bpp%8 != 0
  * PLTE:
     * raw letters
     * stegano
+ * custom chunks
+ * crc

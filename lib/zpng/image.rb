@@ -134,6 +134,10 @@ module ZPNG
         end
     end
 
+    def metadata
+      @metadata ||= Metadata.new(self)
+    end
+
     def [] x, y
       x,y = adam7.convert_coords(x,y) if interlaced?
       scanlines[y][x]
