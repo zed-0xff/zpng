@@ -86,18 +86,31 @@ module ZPNG
       Color.new value,value,value, *args
     end
 
+    ########################################################
+    # simple conversions
+
+    def to_i
+      ((a||0) << 24) + ((r||0) << 16) + ((g||0) << 8) + (b||0)
+    end
+
     def to_s
       "%02X%02X%02X" % [r,g,b]
     end
 
-    ########################################################
+    def to_a
+      [r, g, b, a]
+    end
 
-    # try to convert to pseudographics
+    ########################################################
+    # complex conversions
+
+    # try to convert to one pseudographics ASCII character
     def to_ascii map=ASCII_MAP
       #p self
       map[self.to_grayscale*(map.size-1)/(2**@depth-1), 1]
     end
 
+    # convert to ANSI color name
     def to_ansi
       return to_depth(8).to_ansi if depth != 8
       a = ANSI_COLORS.map{|c| self.class.const_get(c.to_s.upcase) }
@@ -105,6 +118,7 @@ module ZPNG
       ANSI_COLORS[a.index(a.min)]
     end
 
+    # HTML/CSS color in notation like #33aa88
     def to_css
       return to_depth(8).to_css if depth != 8
       "#%02X%02X%02X" % [r,g,b]
@@ -113,30 +127,22 @@ module ZPNG
 
     ########################################################
 
-    def to_i
-      ((a||0) << 24) + ((r||0) << 16) + ((g||0) << 8) + (b||0)
-    end
-
     # change bit depth, return new Color
     def to_depth new_depth
-      c = Color.new :depth => new_depth
+      return self if depth == new_depth
+
+      color = Color.new :depth => new_depth
       if new_depth > self.depth
         %w'r g b'.each do |part|
-          color = self.send(part)
-          if color%2 == 0
-            color <<= (new_depth-self.depth)
-          else
-            (new_depth-self.depth).times{ color = color*2 + 1 }
-          end
-          c.send("#{part}=", color)
+          color.send("#{part}=", (2**new_depth-1)/(2**depth-1)*self.send(part))
         end
       else
         # new_depth < self.depth
         %w'r g b'.each do |part|
-          c.send("#{part}=", self.send(part)>>(self.depth-new_depth))
+          color.send("#{part}=", self.send(part)>>(self.depth-new_depth))
         end
       end
-      c
+      color
     end
 
     def inspect

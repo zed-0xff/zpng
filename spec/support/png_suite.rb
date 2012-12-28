@@ -6,7 +6,6 @@ module PNGSuite
 
     def init dir
       @dir = dir
-      puts "init #@dir"
       if Dir.exist?(dir)
         if Dir[File.join(dir, "*.png")].size > 100
           # already fetched and unpacked

@@ -13,6 +13,7 @@ Installation
 Comparison
 ----------
  * supports `iTXt` (international text) chunks
+ * full support of 16-bit color & alpha depth
 
 Usage
 -----

@@ -24,8 +24,8 @@ describe ZPNG::Color do
       c = c.to_depth(8)
       c.depth.should == 8
       c.r.should == 0
-      c.g.should == 0x20
-      c.b.should == 0x3f
+      c.g.should == 2*17
+      c.b.should == 3*17
     end
 
     it "keeps color depth" do

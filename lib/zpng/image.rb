@@ -32,7 +32,7 @@ module ZPNG
       # load image from file
       def load fname
         open(fname,"rb") do |f|
-          Image.new(f)
+          self.new(f)
         end
       end
       alias :load_file :load
@@ -297,6 +297,10 @@ module ZPNG
       deep_copy.crop!(params)
     end
 
+    def pixels
+      Pixels.new(self)
+    end
+
     def each_pixel &block
       height.times do |y|
         width.times do |x|
@@ -314,7 +318,7 @@ module ZPNG
 
       # copy all but 'interlace' header params
       h = Hash[*%w'width height depth color compression filter'.map{ |k| [k.to_sym, hdr.send(k)] }.flatten]
-      new_img = Image.new h
+      new_img = self.class.new h
       chunks.each do |chunk|
         next if chunk.is_a?(Chunk::IHDR)
         next if chunk.is_a?(Chunk::IDAT)

@@ -3,11 +3,17 @@ require 'zpng/cli'
 
 PNGSuite.each_good do |fname|
   describe fname.sub(%r|\A#{Regexp::escape(Dir.getwd)}/?|, '') do
-    it "accessess all pixels" do
+    it "accessess all pixels via enumerator" do
       img = ZPNG::Image.load(fname)
+
+      first_pixel = img.pixels.first
+
       n = 0
-      img.each_pixel do |px|
+      img.pixels.each do |px|
         px.should be_instance_of(ZPNG::Color)
+        if n == 0
+          px.should == first_pixel
+        end
         n += 1
       end
       n.should == img.width*img.height
