@@ -132,56 +132,77 @@ module ZPNG
           decoded_bytes[x*@bpp/8]
         end
 
-      color, alpha =
-        case @bpp
-        when 1,2,4
-          mask  = 2**@bpp-1
-          shift = 8-(x%(8/@bpp)+1)*@bpp
-          raise "invalid shift #{shift}" if shift < 0 || shift > 7
-          [(raw.ord >> shift) & mask, nil]
-        when 8
-          [raw.ord, nil]
-        when 16
-          if image.alpha_used?
-            raw.unpack 'C2'
-          else
-            # 16-bit grayscale
-            raw.unpack 'n'
-          end
-        when 24
-          # RGB
-          return Color.new(*raw.unpack('C3'))
-        when 32
-          if image.grayscale? && image.alpha_used?
-            # 16-bit grayscale + 16-bit alpha
-            raw.unpack 'n2'
-          else
-            # RGBA
-            return Color.new(*raw.unpack('C4'))
-          end
-        when 48
-          # RGB 16 bits per sample
-          return Color.new(*raw.unpack('n3'), :depth => 16)
-        when 64
-          # RGB 16 bits per sample + 16-bit alpha
-          return Color.new(*raw.unpack('n4'), :depth => 16, :alpha_depth => 16)
+      case image.hdr.color
+      when COLOR_INDEXED                # ALLOWED_DEPTHS: 1, 2, 4, 8
+        mask  = 2**@bpp-1
+        shift = 8-(x%(8/@bpp)+1)*@bpp
+        raise "invalid shift #{shift}" if shift < 0 || shift > 7
+        idx = (raw.ord >> shift) & mask
+        if image.trns
+          # transparency from tRNS chunk
+          # For color type 3 (indexed color), the tRNS chunk contains a series of one-byte alpha values,
+          # corresponding to entries in the PLTE chunk:
+          #
+          #   Alpha for palette index 0:  1 byte
+          #   Alpha for palette index 1:  1 byte
+          #   ...
+          #
+          color = image.palette[idx].dup
+          color.alpha = image.trns.data[idx].ord
         else
-          raise "unexpected bpp #{@bpp}"
+          # no transparency
+          return image.palette[idx]
         end
 
-      if image.grayscale?
-        Color.from_grayscale(color,
-                             :alpha => alpha,
-                             :depth => image.hdr.depth,
-                             :alpha_depth => image.alpha_used? ? image.hdr.depth : 0
-                            )
-      elsif image.palette
-        color = image.palette[color]
-        color.alpha = alpha
-        color
+      when COLOR_GRAYSCALE              # ALLOWED_DEPTHS: 1, 2, 4, 8, 16
+        c = if @bpp == 16
+              raw.unpack('n')[0]
+            else
+              mask  = 2**@bpp-1
+              shift = 8-(x%(8/@bpp)+1)*@bpp
+              raise "invalid shift #{shift}" if shift < 0 || shift > 7
+              (raw.ord >> shift) & mask
+            end
+
+        color = Color.from_grayscale(c, :depth => @bpp) # only in this color mode depth == bpp
+        color.alpha = image._alpha_color(color)
+        return color
+
+      when COLOR_RGB                    # ALLOWED_DEPTHS: 8, 16
+        color =
+          case @bpp
+          when 24                     # RGB  8 bits per sample = 24bpp
+            Color.new(*raw.unpack('C3'))
+          when 48                     # RGB 16 bits per sample = 48bpp
+            Color.new(*raw.unpack('n3'), :depth => 16)
+          else raise "COLOR_RGB unexpected bpp #@bpp"
+          end
+
+        color.alpha = image._alpha_color(color)
+        return color
+
+      when COLOR_GRAY_ALPHA             # ALLOWED_DEPTHS: 8, 16
+        case @bpp
+        when 16                         #  8-bit grayscale +  8-bit alpha
+          return Color.from_grayscale(*raw.unpack('C2'))
+        when 32                         # 16-bit grayscale + 16-bit alpha
+          return Color.from_grayscale(*raw.unpack('n2'), :depth => 16)
+        else raise "COLOR_GRAY_ALPHA unexpected bpp #@bpp"
+        end
+
+      when COLOR_RGBA                   # ALLOWED_DEPTHS: 8, 16
+        case @bpp
+        when 32                         # RGBA  8-bit/sample
+          return Color.new(*raw.unpack('C4'))
+        when 64                         # RGBA 16-bit/sample
+          return Color.new(*raw.unpack('n4'), :depth => 16 )
+        else raise "COLOR_RGBA unexpected bpp #@bpp"
+        end
+
       else
-        raise "cannot decode color"
-      end
+        raise "unexpected color mode #{image.hdr.color}"
+
+      end # case img.hdr.color
     end
 
     def decoded_bytes

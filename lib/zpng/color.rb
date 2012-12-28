@@ -1,7 +1,7 @@
 module ZPNG
   class Color
     attr_accessor :r, :g, :b, :a
-    attr_accessor :depth, :alpha_depth
+    attr_accessor :depth
 
     include DeepCopyable
 
@@ -14,7 +14,6 @@ module ZPNG
 
       # default sample depth for r,g,b and alpha = 8 bits
       @depth       = h[:depth]       || 8
-      @alpha_depth = h[:alpha_depth] || @depth
     end
 
     alias :alpha :a
@@ -73,8 +72,12 @@ module ZPNG
       (r+g+b)/3
     end
 
-    def self.from_grayscale value, alpha_or_hash = nil
-      Color.new value,value,value, alpha_or_hash
+    # from_grayscale level
+    # from_grayscale level,        :depth => 16
+    # from_grayscale level, alpha
+    # from_grayscale level, alpha, :depth => 16
+    def self.from_grayscale value, *args
+      Color.new value,value,value, *args
     end
 
     def to_s
@@ -142,9 +145,8 @@ module ZPNG
         s << (g ? "%02x" % g : "??")
         s << (b ? "%02x" % b : "??")
       end
-      s << " a=#{a}" if a && alpha_depth != 0
+      s << " a=#{a}" if a
       s << " depth=#{depth}" if depth != 8
-      s << " alpha_depth=#{alpha_depth}" if alpha_depth != 8 && alpha_depth != 0
       s << ">"
     end
   end

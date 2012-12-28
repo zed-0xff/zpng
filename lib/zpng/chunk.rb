@@ -229,6 +229,7 @@ module ZPNG
 
     class IDAT < Chunk; end
     class IEND < Chunk; end
+    class TRNS < Chunk; end
 
   end
 end

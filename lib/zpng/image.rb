@@ -104,6 +104,46 @@ module ZPNG
 
     public
 
+    # internal helper method for color types 0 (grayscale) and 2 (truecolor)
+    def _alpha_color color
+      return nil unless trns
+
+      # For color type 0 (grayscale), the tRNS chunk contains a single gray level value, stored in the format:
+      #
+      #   Gray:  2 bytes, range 0 .. (2^bitdepth)-1
+      #
+      # For color type 2 (truecolor), the tRNS chunk contains a single RGB color value, stored in the format:
+      #
+      #   Red:   2 bytes, range 0 .. (2^bitdepth)-1
+      #   Green: 2 bytes, range 0 .. (2^bitdepth)-1
+      #   Blue:  2 bytes, range 0 .. (2^bitdepth)-1
+      #
+      # (If the image bit depth is less than 16, the least significant bits are used and the others are 0)
+      # Pixels of the specified gray level are to be treated as transparent (equivalent to alpha value 0);
+      # all other pixels are to be treated as fully opaque ( alpha = (2^bitdepth)-1 )
+
+      @alpha_color ||=
+        case hdr.color
+        when COLOR_GRAYSCALE
+          v = trns.data.unpack('n')[0] & (2**hdr.depth-1)
+          Color.from_grayscale(v, :depth => hdr.depth)
+        when COLOR_RGB
+          a = trns.data.unpack('n3').map{ |v| v & (2**hdr.depth-1) }
+          Color.new(*a, :depth => hdr.depth)
+        else
+          raise "color2alpha only intended for GRAYSCALE & RGB color modes"
+        end
+
+      color == @alpha_color ? 0 : (2**hdr.depth-1)
+    end
+
+    public
+
+    def trns
+      # not used "@trns ||= ..." here b/c it will call find() each time of there's no TRNS chunk
+      defined?(@trns) ? @trns : (@trns=@chunks.find{ |c| c.is_a?(Chunk::TRNS) })
+    end
+
     def bpp
       @header && @header.bpp
     end
