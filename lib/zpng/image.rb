@@ -28,13 +28,16 @@ module ZPNG
       @adam7 ||= Adam7Decoder.new(self)
     end
 
-    # load image from file
-    def self.load fname
-      open(fname,"rb") do |f|
-        Image.new(f)
+    class << self
+      # load image from file
+      def load fname
+        open(fname,"rb") do |f|
+          Image.new(f)
+        end
       end
+      alias :load_file :load
+      alias :from_file :load # as in ChunkyPNG
     end
-    alias :load_file :load
 
     # save image to file
     def save fname
