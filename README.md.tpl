@@ -10,6 +10,10 @@ Installation
 ------------
     gem install zpng
 
+Comparison
+----------
+ * supports `iTXt` (international text) chunks
+
 Usage
 -----
 
