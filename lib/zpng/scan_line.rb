@@ -148,7 +148,12 @@ module ZPNG
           #   ...
           #
           color = image.palette[idx].dup
-          color.alpha = image.trns.data[idx].ord
+          if color.alpha = image.trns.data[idx]
+            # if it's not NULL - convert it from char to int,
+            # otherwise it means fully opaque color, as well as NULL alpha in ZPNG::Color
+            color.alpha = color.alpha.ord
+          end
+          return color
         else
           # no transparency
           return image.palette[idx]
