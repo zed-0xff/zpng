@@ -9,11 +9,11 @@ module ZPNG
       h = a.last.is_a?(Hash) ? a.pop : {}
       @r,@g,@b,@a = *a
 
-      # default ALPHA = 0xff - opaque
-      @a ||= h[:alpha] || 0xff
-
       # default sample depth for r,g,b and alpha = 8 bits
       @depth       = h[:depth]       || 8
+
+      # default ALPHA = 0xff - opaque
+      @a ||= h[:alpha] || (2**@depth-1)
     end
 
     alias :alpha :a
@@ -50,6 +50,7 @@ module ZPNG
 
     # euclidian distance - http://en.wikipedia.org/wiki/Euclidean_distance
     def euclidian other_color
+      # TODO: different depths
       r  = (self.r.to_i - other_color.r.to_i)**2
       r += (self.g.to_i - other_color.g.to_i)**2
       r += (self.b.to_i - other_color.b.to_i)**2
@@ -57,7 +58,8 @@ module ZPNG
     end
 
     def white?
-      r == 0xff && g == 0xff && b == 0xff
+      max = 2**depth-1
+      r == max && g == max && b == max
     end
 
     def black?
@@ -66,6 +68,10 @@ module ZPNG
 
     def transparent?
       a == 0
+    end
+
+    def opaque?
+      a.nil? || a == 2**depth-1
     end
 
     def to_grayscale
@@ -139,15 +145,21 @@ module ZPNG
         s << " r=" + (r ? "%04x" % r : "????")
         s << " g=" + (g ? "%04x" % g : "????")
         s << " b=" + (b ? "%04x" % b : "????")
+        s << " alpha=%04x" % alpha if alpha
       else
         s << " #"
         s << (r ? "%02x" % r : "??")
         s << (g ? "%02x" % g : "??")
         s << (b ? "%02x" % b : "??")
+        s << " alpha=%02x" % alpha if alpha
       end
-      s << " a=#{a}" if a
       s << " depth=#{depth}" if depth != 8
       s << ">"
+    end
+
+    # compare with other color
+    def == c
+      depth == c.depth && r == c.r && g == c.g && b == c.b && a == c.a
     end
   end
 end

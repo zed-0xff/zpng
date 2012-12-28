@@ -25,9 +25,13 @@ module PNGSuite
       system "tar", "xzf", fname, "-C", dir
     end
 
-    def each
+    def each *prefixes
       Dir[File.join(dir,"*.png")].each do |fname|
-        yield fname
+        if prefixes.empty?
+          yield fname
+        elsif prefixes.any?{ |p| File.basename(fname).start_with?(p) }
+          yield fname
+        end
       end
     end
 
