@@ -82,6 +82,10 @@ module ZPNG
       (r+g+b)/3
     end
 
+    def to_gray_alpha
+      [to_grayscale, alpha]
+    end
+
     # from_grayscale level
     # from_grayscale level,        :depth => 16
     # from_grayscale level, alpha

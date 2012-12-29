@@ -14,6 +14,7 @@ Comparison
 ----------
  * supports `iTXt` (international text) chunks
  * full support of 16-bit color & alpha depth
+ * correct 4bpp image decoding (as of 29-Dec-2012, ChunkyPNG had 1-bit error in 4bpp image decoding)
 
 Usage
 -----

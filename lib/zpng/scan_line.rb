@@ -77,49 +77,63 @@ module ZPNG
       decode_pixel(x)
     end
 
-    def []= x, newcolor
-      if image.hdr.palette_used?
-        color_idx = image.palette.find_or_add(newcolor)
-        raise "no color #{newcolor.inspect} in palette" unless color_idx
-      elsif image.grayscale?
-        color_idx = newcolor.to_grayscale
-      end
+    def []= x, color
+      case image.hdr.color
+      when COLOR_INDEXED                # ALLOWED_DEPTHS: 1, 2, 4, 8
+        color_idx = image.palette.find_or_add(color)
+        raise "no color #{color.inspect} in palette" unless color_idx
 
-      case @bpp
-      when 1,2,4
-        pos = x*@bpp/8
-        b = decoded_bytes[pos].ord
         mask  = 2**@bpp-1
         shift = 8-(x%(8/@bpp)+1)*@bpp
         raise "invalid shift #{shift}" if shift < 0 || shift > 7
 
-#        printf "[d] %s x=%2d bpp=%d pos=%d mask=%08b shift=%d decoded_bytes=#{decoded_bytes.inspect}\n", self.to_s, x, @bpp, pos, mask, shift
-
+        pos = x*@bpp/8
+        b = decoded_bytes[pos].ord
         b = (b & (0xff-(mask<<shift))) | ((color_idx & mask) << shift)
         decoded_bytes[pos] = b.chr
+        # TODO: transparency in TRNS
 
-      when 8
-        if image.hdr.palette_used?
-          decoded_bytes[x] = color_idx.chr
+      when COLOR_GRAYSCALE              # ALLOWED_DEPTHS: 1, 2, 4, 8, 16
+        raw = color.to_depth(@bpp).to_grayscale
+        pos = x*@bpp/8
+        if @bpp == 16
+          decoded_bytes[pos,2] = [raw].pack('n')
         else
-          decoded_bytes[x] = ((newcolor.r + newcolor.g + newcolor.b)/3).chr
+          mask  = 2**@bpp-1
+          shift = 8-(x%(8/@bpp)+1)*@bpp
+          raise "invalid shift #{shift}" if shift < 0 || shift > 7
+          b = decoded_bytes[pos].ord
+          b = (b & (0xff-(mask<<shift))) | ((raw & mask) << shift)
+          decoded_bytes[pos] = b.chr
         end
-      when 16
-        if image.hdr.palette_used? && image.hdr.alpha_used?
-          decoded_bytes[x*2] = color_idx.chr
-          decoded_bytes[x*2+1] = (newcolor.alpha || 0xff).chr
-        elsif image.grayscale? && image.hdr.alpha_used?
-          decoded_bytes[x*2] = newcolor.to_grayscale.chr
-          decoded_bytes[x*2+1] = (newcolor.alpha || 0xff).chr
-        else
-          raise "unexpected colormode #{image.hdr.inspect}"
+        # TODO: transparency in TRNS
+
+      when COLOR_RGB                    # ALLOWED_DEPTHS: 8, 16
+        case @bpp
+        when 24; decoded_bytes[x*3,3] = color.to_depth(8).to_a.pack('C3')
+        when 48; decoded_bytes[x*6,6] = color.to_depth(16).to_a.pack('n3')
+        else raise "unexpected bpp #@bpp"
         end
-      when 24
-        decoded_bytes[x*3,3] = [newcolor.r, newcolor.g, newcolor.b].map(&:chr).join
-      when 32
-        decoded_bytes[x*4,4] = [newcolor.r, newcolor.g, newcolor.b, newcolor.a].map(&:chr).join
-      else raise "unsupported bpp #{@bpp}"
-      end
+        # TODO: transparency in TRNS
+
+      when COLOR_GRAY_ALPHA             # ALLOWED_DEPTHS: 8, 16
+        case @bpp
+        when 16; decoded_bytes[x*2,2] = color.to_depth(8).to_gray_alpha.pack('C2')
+        when 32; decoded_bytes[x*4,4] = color.to_depth(16).to_gray_alpha.pack('n2')
+        else raise "unexpected bpp #@bpp"
+        end
+
+      when COLOR_RGBA                   # ALLOWED_DEPTHS: 8, 16
+        case @bpp
+        when 32; decoded_bytes[x*4,4] = color.to_depth(8).to_a.pack('C4')
+        when 64; decoded_bytes[x*8,8] = color.to_depth(16).to_a.pack('n4')
+        else raise "unexpected bpp #@bpp"
+        end
+
+      else
+        raise "unexpected color mode #{image.hdr.color}"
+
+      end # case image.hdr.color
     end
 
     def decode_pixel x
@@ -237,6 +251,19 @@ module ZPNG
     end
 
     private
+
+    def prev_scanline_byte x
+      if image.interlaced?
+        # When the image is interlaced, each pass of the interlace pattern is
+        # treated as an independent image for filtering purposes
+        image.adam7.pass_start?(@idx) ? 0 : image.scanlines[@idx-1].decoded_bytes[x].ord
+      elsif @idx > 0
+        image.scanlines[@idx-1].decoded_bytes[x].ord
+      else
+        0
+      end
+    end
+
     def decode_byte x, b0, bpp1
       raw = @image.imagedata[@offset+x+1]
 
@@ -246,27 +273,25 @@ module ZPNG
       end
 
       case @filter
-      when FILTER_NONE  # 0
+      when FILTER_NONE    # 0
         raw
 
-      when FILTER_SUB   # 1
+      when FILTER_SUB     # 1
         return raw unless b0
         ((raw.ord + b0.ord) & 0xff).chr
 
-      when FILTER_UP    # 2
-        return raw if @idx == 0
-        prev = @image.scanlines[@idx-1].decoded_bytes[x]
-        ((raw.ord + prev.ord) & 0xff).chr
+      when FILTER_UP      # 2
+        ((raw.ord + prev_scanline_byte(x)) & 0xff).chr
 
       when FILTER_AVERAGE # 3
         prev = (b0 && b0.ord) || 0
-        prior = (@idx > 0) ? @image.scanlines[@idx-1].decoded_bytes[x].ord : 0
+        prior = prev_scanline_byte(x)
         ((raw.ord + (prev + prior)/2) & 0xff).chr
 
-      when FILTER_PAETH # 4
+      when FILTER_PAETH   # 4
         pa = (b0 && b0.ord) || 0
-        pb = (@idx > 0) ? @image.scanlines[@idx-1].decoded_bytes[x].ord : 0
-        pc = (b0 && @idx > 0) ? @image.scanlines[@idx-1].decoded_bytes[x-bpp1].ord : 0
+        pb = prev_scanline_byte(x)
+        pc = b0 ? prev_scanline_byte(x-bpp1) : 0
         ((raw.ord + paeth_predictor(pa, pb, pc)) & 0xff).chr
       else
         raise "invalid ScanLine filter #{@filter}"

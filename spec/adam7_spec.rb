@@ -59,3 +59,27 @@ describe ZPNG::Adam7Decoder do
     end
   end
 end
+
+PNGSuite.each("???i*.png") do |fname_i|
+  fname_n = File.basename(fname_i)
+  fname_n[3] = 'n'
+  fname_n = File.join(File.dirname(fname_i), fname_n)
+  next unless File.exist?(fname_n)
+
+  describe fname_i.sub(%r|\A#{Regexp::escape(Dir.getwd)}/?|, '') do
+    it "should be pixel-by-pixel identical to " + fname_n.sub(%r|\A#{Regexp::escape(Dir.getwd)}/?|, '') do
+      interlaced = ZPNG::Image.load(fname_i)
+      normal     = ZPNG::Image.load(fname_n)
+
+      normal.pixels.to_a.should == interlaced.pixels.to_a
+
+      interlaced.each_pixel do |color,x,y|
+        normal[x,y].should == color
+      end
+
+      normal.each_pixel do |color,x,y|
+        interlaced[x,y].should == color
+      end
+    end
+  end
+end

@@ -215,7 +215,7 @@ module ZPNG
       end
 
       def add color
-        raise "palette full, cannot add color #{ncolors}" if ncolors >= max_colors
+        raise "palette full (#{ncolors}), cannot add #{color.inspect}" if ncolors >= max_colors
         idx = ncolors
         self[idx] = color
         idx

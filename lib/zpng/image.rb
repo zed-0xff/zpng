@@ -1,6 +1,6 @@
 module ZPNG
   class Image
-    attr_accessor :data, :header, :chunks, :scanlines, :imagedata, :palette
+    attr_accessor :data, :header, :chunks, :scanlines, :imagedata
     alias :hdr :header
 
     include DeepCopyable
@@ -57,8 +57,17 @@ module ZPNG
       @new_image = true
       @chunks << (@header  = Chunk::IHDR.new(h))
       if @header.palette_used?
-        @chunks << (@palette = Chunk::PLTE.new)
-        @palette[0] = h[:background] || h[:bg] || Color::BLACK # add default bg color
+        if h.key?(:palette)
+          if h[:palette]
+            @chunks << h[:palette]
+          else
+            # :palette => nil
+            # assume palette will be added later
+          end
+        else
+          @chunks << Chunk::PLTE.new
+          palette[0] = h[:background] || h[:bg] || Color::BLACK # add default bg color
+        end
       end
     end
 
@@ -89,8 +98,6 @@ module ZPNG
         case chunk
         when Chunk::IHDR
           @header = chunk
-        when Chunk::PLTE
-          @palette = chunk
         when Chunk::IEND
           break
         end
@@ -139,10 +146,21 @@ module ZPNG
 
     public
 
+    ###########################################################################
+    # chunks access
+
     def trns
       # not used "@trns ||= ..." here b/c it will call find() each time of there's no TRNS chunk
       defined?(@trns) ? @trns : (@trns=@chunks.find{ |c| c.is_a?(Chunk::TRNS) })
     end
+
+    def plte
+      @plte ||= @chunks.find{ |c| c.is_a?(Chunk::PLTE) }
+    end
+    alias :palette :plte
+
+    ###########################################################################
+    # image attributes
 
     def bpp
       @header && @header.bpp
@@ -313,22 +331,29 @@ module ZPNG
     # OR returns self if no need to deinterlace
     def deinterlace
       return self unless interlaced?
-      require 'pp'
-      pp chunks
 
       # copy all but 'interlace' header params
       h = Hash[*%w'width height depth color compression filter'.map{ |k| [k.to_sym, hdr.send(k)] }.flatten]
+
+      # don't auto-add palette chunk
+      h[:palette] = nil
+
+      # create new img
       new_img = self.class.new h
+
+      # copy all but hdr/imagedata/end chunks
       chunks.each do |chunk|
         next if chunk.is_a?(Chunk::IHDR)
         next if chunk.is_a?(Chunk::IDAT)
         next if chunk.is_a?(Chunk::IEND)
         new_img.chunks << chunk.deep_copy
       end
+
+      # pixel-by-pixel copy
       each_pixel do |c,x,y|
         new_img[x,y] = c
       end
-      p new_img.scanlines
+
       new_img
     end
   end

@@ -18,7 +18,7 @@ module ZPNG
       @scanlines_count = 0
       # two leading zeroes added specially for convert_coords() code readability
       @pass_starts = [0,0] + @widths.map(&:size).map{ |x| @scanlines_count+=x }
-      @widths.flatten!
+      @widths.flatten! # yahoo! :))
     end
 
     # scanline width in pixels
@@ -66,6 +66,13 @@ module ZPNG
       else
         raise "invalid coords"
       end
+    end
+
+    # is the specified scanline is a first scanline in the pass?
+    # When the image is interlaced, each pass of the interlace pattern is
+    # treated as an independent image for filtering purposes
+    def pass_start? idx
+      @pass_starts.include?(idx)
     end
   end
 end

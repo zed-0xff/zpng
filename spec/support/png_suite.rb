@@ -28,7 +28,7 @@ module PNGSuite
       Dir[File.join(dir,"*.png")].each do |fname|
         if prefixes.empty?
           yield fname
-        elsif prefixes.any?{ |p| File.basename(fname).start_with?(p) }
+        elsif prefixes.any?{ |p| p[/[*?\[]/] ? File.fnmatch(p, File.basename(fname)) : File.basename(fname).start_with?(p) }
           yield fname
         end
       end
