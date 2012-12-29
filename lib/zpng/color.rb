@@ -1,6 +1,7 @@
 module ZPNG
   class Color
-    attr_accessor :r, :g, :b, :a
+    attr_accessor :r, :g, :b
+    attr_reader   :a
     attr_accessor :depth
 
     include DeepCopyable
@@ -16,8 +17,11 @@ module ZPNG
       @a ||= h[:alpha] || (2**@depth-1)
     end
 
-    alias :alpha :a
-    def alpha= a; @a=a; end
+    def a= a
+      @a = a || (2**@depth-1)   # NULL alpha means fully opaque
+    end
+    alias :alpha  :a
+    alias :alpha= :a=
 
     BLACK = Color.new(0  ,  0,  0)
     WHITE = Color.new(255,255,255)
@@ -133,12 +137,12 @@ module ZPNG
 
       color = Color.new :depth => new_depth
       if new_depth > self.depth
-        %w'r g b'.each do |part|
+        %w'r g b a'.each do |part|
           color.send("#{part}=", (2**new_depth-1)/(2**depth-1)*self.send(part))
         end
       else
         # new_depth < self.depth
-        %w'r g b'.each do |part|
+        %w'r g b a'.each do |part|
           color.send("#{part}=", self.send(part)>>(self.depth-new_depth))
         end
       end
@@ -151,13 +155,13 @@ module ZPNG
         s << " r=" + (r ? "%04x" % r : "????")
         s << " g=" + (g ? "%04x" % g : "????")
         s << " b=" + (b ? "%04x" % b : "????")
-        s << " alpha=%04x" % alpha if alpha
+        s << " alpha=%04x" % alpha if alpha && alpha != 0xffff
       else
         s << " #"
         s << (r ? "%02x" % r : "??")
         s << (g ? "%02x" % g : "??")
         s << (b ? "%02x" % b : "??")
-        s << " alpha=%02x" % alpha if alpha
+        s << " alpha=%02x" % alpha if alpha && alpha != 0xff
       end
       s << " depth=#{depth}" if depth != 8
       s << ">"
