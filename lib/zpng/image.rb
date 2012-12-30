@@ -319,6 +319,12 @@ module ZPNG
       Pixels.new(self)
     end
 
+    def == other_image
+      width  == other_image.width &&
+      height == other_image.height &&
+      pixels == other_image.pixels
+    end
+
     def each_pixel &block
       height.times do |y|
         width.times do |x|
