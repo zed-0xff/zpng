@@ -35,6 +35,8 @@ module ZPNG
     PURPLE= MAGENTA =
             Color.new(255,  0,255)
 
+    TRANSPARENT = Color.new(0,0,0,0)
+
     ANSI_COLORS = [:black, :red, :green, :yellow, :blue, :magenta, :cyan, :white]
 
     #ASCII_MAP = %q_ .`,-:;~"!<+*^(LJ=?vctsxj12FuoCeyPSah5wVmXA4G9$OR0MQNW#&%@_

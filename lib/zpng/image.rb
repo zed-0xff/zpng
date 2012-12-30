@@ -55,7 +55,7 @@ module ZPNG
 
     def _from_hash h
       @new_image = true
-      @chunks << (@header  = Chunk::IHDR.new(h))
+      @chunks << (@header = Chunk::IHDR.new(h))
       if @header.palette_used?
         if h.key?(:palette)
           if h[:palette]
@@ -213,7 +213,7 @@ module ZPNG
     # we must decode all scanlines before doing any modifications
     # or scanlines decoded AFTER modification of UPPER ones will be decoded wrong
     def decode_all_scanlines
-      return if @all_scanlines_decoded
+      return if @all_scanlines_decoded || new_image?
       @all_scanlines_decoded = true
       scanlines.each(&:decode!)
     end
@@ -261,7 +261,8 @@ module ZPNG
     end
 
     def export
-      imagedata # fill @imagedata, if not already filled
+      # fill @imagedata, if not already filled
+      imagedata unless new_image?
 
       # delete old IDAT chunks
       @chunks.delete_if{ |c| c.is_a?(Chunk::IDAT) }

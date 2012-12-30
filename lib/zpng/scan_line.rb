@@ -8,6 +8,7 @@ module ZPNG
     FILTER_PAETH          = 4
 
     attr_accessor :image, :idx, :filter, :offset, :bpp
+    attr_writer :decoded_bytes
 
     def initialize image, idx
       @image,@idx = image,idx
