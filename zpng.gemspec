@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "zpng"
-  s.version = "0.2.0"
+  s.version = "0.2.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2012-12-23"
+  s.date = "2013-01-02"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["zpng"]
   s.extra_rdoc_files = [
@@ -37,12 +37,17 @@ Gem::Specification.new do |s|
     "lib/zpng/cli.rb",
     "lib/zpng/color.rb",
     "lib/zpng/deep_copyable.rb",
+    "lib/zpng/hexdump.rb",
     "lib/zpng/image.rb",
+    "lib/zpng/metadata.rb",
+    "lib/zpng/pixels.rb",
     "lib/zpng/scan_line.rb",
     "lib/zpng/string_ext.rb",
+    "lib/zpng/text_chunk.rb",
     "misc/chars.png",
     "misc/gen_ascii_map.rb",
     "samples/captcha_4bpp.png",
+    "samples/itxt.png",
     "samples/modify.rb",
     "samples/qr_aux_chunks.png",
     "samples/qr_bw.png",
@@ -53,14 +58,22 @@ Gem::Specification.new do |s|
     "samples/qr_rgb.png",
     "samples/qr_rgba.png",
     "spec/adam7_spec.rb",
+    "spec/alpha_spec.rb",
     "spec/ascii_spec.rb",
+    "spec/cli_spec.rb",
     "spec/color_spec.rb",
     "spec/create_image_spec.rb",
     "spec/crop_spec.rb",
+    "spec/deinterlace_spec.rb",
     "spec/image_spec.rb",
+    "spec/metadata_spec.rb",
     "spec/modify_spec.rb",
+    "spec/pixel_access_spec.rb",
+    "spec/pixels_enumerator_spec.rb",
     "spec/running_pixel_spec.rb",
+    "spec/set_random_pixel_spec.rb",
     "spec/spec_helper.rb",
+    "spec/support/png_suite.rb",
     "spec/zpng_spec.rb",
     "zpng.gemspec"
   ]
@@ -74,20 +87,17 @@ Gem::Specification.new do |s|
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-      s.add_runtime_dependency(%q<hexdump>, [">= 0"])
       s.add_runtime_dependency(%q<rainbow>, [">= 0"])
       s.add_development_dependency(%q<rspec>, [">= 2.8.0"])
       s.add_development_dependency(%q<bundler>, [">= 1.0.0"])
       s.add_development_dependency(%q<jeweler>, ["~> 1.8.4"])
     else
-      s.add_dependency(%q<hexdump>, [">= 0"])
       s.add_dependency(%q<rainbow>, [">= 0"])
       s.add_dependency(%q<rspec>, [">= 2.8.0"])
       s.add_dependency(%q<bundler>, [">= 1.0.0"])
       s.add_dependency(%q<jeweler>, ["~> 1.8.4"])
     end
   else
-    s.add_dependency(%q<hexdump>, [">= 0"])
     s.add_dependency(%q<rainbow>, [">= 0"])
     s.add_dependency(%q<rspec>, [">= 2.8.0"])
     s.add_dependency(%q<bundler>, [">= 1.0.0"])
