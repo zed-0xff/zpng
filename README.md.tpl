@@ -6,6 +6,8 @@ Description
 -----------
 A pure ruby PNG file manipulation & validation
 
+(If you need a high-level PNG creation toolkit - take a look at [SugarPNG](https://github.com/zed-0xff/sugar_png))
+
 Installation
 ------------
     gem install zpng

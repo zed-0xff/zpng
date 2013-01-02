@@ -175,7 +175,32 @@ module ZPNG
 
     # compare with other color
     def == c
-      depth == c.depth && r == c.r && g == c.g && b == c.b && a == c.a
+      return false unless c.is_a?(Color)
+      c1,c2 =
+        if self.depth > c.depth
+          [self, c.to_depth(self.depth)]
+        else
+          [self.to_depth(c.depth), c]
+        end
+      c1.r == c2.r && c1.g == c2.g && c1.b == c2.b && c1.a == c2.a
+    end
+    alias :eql? :==
+
+    # compare with other color
+    def <=> c
+      c1,c2 =
+        if self.depth > c.depth
+          [self, c.to_depth(self.depth)]
+        else
+          [self.to_depth(c.depth), c]
+        end
+      r = c1.to_grayscale <=> c2.to_grayscale
+      r == 0 ? (c1.to_a <=> c2.to_a) : r
+    end
+
+    # for Array.uniq()
+    def hash
+      self.to_i
     end
   end
 end

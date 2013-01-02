@@ -17,5 +17,9 @@ module ZPNG
     def == other
       self.to_a == other.to_a
     end
+
+    def uniq
+      self.to_a.uniq
+    end
   end
 end

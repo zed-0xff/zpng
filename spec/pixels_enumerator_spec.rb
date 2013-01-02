@@ -20,3 +20,15 @@ PNGSuite.each_good do |fname|
     end
   end
 end
+
+describe "pixels enumerator" do
+  describe "#uniq" do
+    it "returns only unique pixels" do
+      fname = File.join(SAMPLES_DIR, "qr_bw.png")
+      img = ZPNG::Image.load(fname)
+      a = img.pixels.uniq
+      a.size.should == 2
+      a.sort.should == [ZPNG::Color::BLACK, ZPNG::Color::WHITE].sort
+    end
+  end
+end

@@ -37,4 +37,14 @@ describe ZPNG::Color do
       c.b.should == 0x33
     end
   end
+
+  it "sorts" do
+    c1 = ZPNG::Color.new 0x11, 0x11, 0x11
+    c2 = ZPNG::Color.new 0x22, 0x22, 0x22
+    c3 = ZPNG::Color.new    0,    0, 0xff
+
+    [c3,c1,c2].sort.should == [c1,c2,c3]
+    [c3,c2,c1].sort.should == [c1,c2,c3]
+    [c1,c3,c2].sort.should == [c1,c2,c3]
+  end
 end
