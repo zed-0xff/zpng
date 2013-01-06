@@ -139,12 +139,12 @@ module ZPNG
       puts "[.] metadata:"
       @img.metadata.each do |k,v,h|
         if h.keys.sort == [:keyword, :text]
-          v.gsub!(/[\n\r]+/, "\n"+" "*18)
-          printf "    %-11s : %s\n", k, v.gray
+          v.gsub!(/[\n\r]+/, "\n"+" "*19)
+          printf "    %-12s : %s\n", k, v.gray
         else
           printf "    %s (%s: %s):", k, h[:language], h[:translated_keyword]
-          v.gsub!(/[\n\r]+/, "\n"+" "*18)
-          printf "\n%s%s\n", " "*18, v.gray
+          v.gsub!(/[\n\r]+/, "\n"+" "*19)
+          printf "\n%s%s\n", " "*19, v.gray
         end
       end
       puts
