@@ -157,7 +157,7 @@ module ZPNG
       puts "[.] image size #{@img.width || '?'}x#{@img.height || '?'}, #{@img.bpp}bpp, #{color}"
       puts "[.] palette = #{@img.palette}" if @img.palette
       puts "[.] uncompressed imagedata size = #{@img.imagedata.size} bytes"
-      _conditional_hexdump @img.imagedata, 3
+      _conditional_hexdump(@img.imagedata, 3) if @options[:verbose] > 0
     end
 
     def _conditional_hexdump data, v2 = 2

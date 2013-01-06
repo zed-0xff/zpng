@@ -1,3 +1,5 @@
+require 'stringio'
+
 module ZPNG
   class Image
     attr_accessor :data, :header, :chunks, :scanlines, :imagedata
@@ -186,14 +188,72 @@ module ZPNG
       @header && @header.alpha_used?
     end
 
+    private
+    def _imagedata
+      data_chunks = @chunks.find_all{ |c| c.is_a?(Chunk::IDAT) }
+      case data_chunks.size
+      when 0
+        # no imagedata chunks ?!
+        nil
+      when 1
+        # a single chunk - save memory and return a reference to its data
+        data_chunks[0].data
+      else
+        # multiple data chunks - join their contents
+        data_chunks.map(&:data).join
+      end
+    end
+    public
+
     def imagedata
       @imagedata ||=
         begin
           puts "[?] no image header, assuming non-interlaced RGB".yellow unless @header
-          data = @chunks.find_all{ |c| c.is_a?(Chunk::IDAT) }.map(&:data).join
+          data = _imagedata
+          #check_zlib_extradata data
           (data && data.size > 0) ? Zlib::Inflate.inflate(data) : ''
         end
     end
+
+#    # check for extradata in zlib datastream after the end of compressed stream
+#    def check_zlib_extradata data
+#      zi = Zlib::Inflate.new(Zlib::MAX_WBITS)
+#      io = StringIO.new(data)
+#      while !io.eof? && !zi.finished?
+#        zi.inflate(io.read(16384))
+#      end
+#      zi.finish unless zi.finished?
+#      if data.size != zi.total_in
+#        p [data.size, zi.total_in, zi.total_out]
+#        raise
+#      end
+#      zi.close if zi && !zi.closed?
+#    end
+
+#    # try to get imagedata size in bytes, w/o storing entire decompressed
+#    # stream in memory. used in bin/zpng
+#    # result: less memory used on big images, but speed gain near 1-2% in best case,
+#    #         and 2x slower in worst case because imagedata decoded 2 times
+#    def imagedata_size
+#      if @imagedata
+#        # already decompressed
+#        @imagedata.size
+#      else
+#        zi = nil
+#        @imagedata_size ||=
+#          begin
+#            zi = Zlib::Inflate.new(Zlib::MAX_WBITS)
+#            io = StringIO.new(_imagedata)
+#            while !io.eof? && !zi.finished?
+#              n = zi.inflate(io.read(16384))
+#            end
+#            zi.finish unless zi.finished?
+#            zi.total_out
+#          ensure
+#            zi.close if zi && !zi.closed?
+#          end
+#      end
+#    end
 
     def metadata
       @metadata ||= Metadata.new(self)
