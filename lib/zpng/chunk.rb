@@ -45,7 +45,7 @@ module ZPNG
     def export
       @data = self.export_data # virtual
       @size = @data.size # XXX hmm.. is it always is?
-      @crc = Zlib.crc32(data, Zlib.crc32(type))
+      fix_crc!
       [@size,@type].pack('Na4') + @data + [@crc].pack('N')
     end
 
@@ -64,6 +64,10 @@ module ZPNG
     def crc_ok?
       expected_crc = Zlib.crc32(data, Zlib.crc32(type))
       expected_crc == crc
+    end
+
+    def fix_crc!
+      @crc = Zlib.crc32(data, Zlib.crc32(type))
     end
 
     class IHDR < Chunk
@@ -184,7 +188,7 @@ module ZPNG
         vars = instance_variables - [:@type, :@crc, :@data, :@size]
         vars -= [:@idx] if verbosity <= 0
         super.sub(/ *>$/,'') + ", " +
-          vars.map{ |var| "#{var.to_s.tr('@','')}=#{instance_variable_get(var)}" }.
+          vars.sort.map{ |var| "#{var.to_s.tr('@','')}=#{instance_variable_get(var)}" }.
           join(", ") + ">"
       end
     end

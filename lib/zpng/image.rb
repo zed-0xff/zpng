@@ -2,12 +2,16 @@ require 'stringio'
 
 module ZPNG
   class Image
-    attr_accessor :data, :header, :chunks, :scanlines, :imagedata, :extradata
-    alias :hdr :header
+    attr_accessor :chunks, :scanlines, :imagedata, :extradata
+
+    # now only for (limited) BMP support
+    attr_accessor :color_class
 
     include DeepCopyable
+    include BMP::Reader
 
-    PNG_HDR = "\x89PNG\x0d\x0a\x1a\x0a"
+    PNG_HDR = "\x89PNG\x0d\x0a\x1a\x0a".force_encoding('binary')
+    BMP_HDR = "BM".force_encoding('binary')
 
     # possible input params:
     #   IO      of opened image file
@@ -15,11 +19,12 @@ module ZPNG
     #   Hash    of image parameters to create new blank image
     def initialize x
       @chunks = []
+      @color_class = Color
       case x
         when IO
-          _from_string x.read
+          _from_io x
         when String
-          _from_string x
+          _from_io StringIO.new(x)
         when Hash
           _from_hash x
         else
@@ -61,8 +66,8 @@ module ZPNG
 
     def _from_hash h
       @new_image = true
-      @chunks << (@header = Chunk::IHDR.new(h))
-      if @header.palette_used?
+      @chunks << Chunk::IHDR.new(h)
+      if header.palette_used?
         if h.key?(:palette)
           if h[:palette]
             @chunks << h[:palette]
@@ -77,36 +82,34 @@ module ZPNG
       end
     end
 
-    def _from_string x
-      if x
-        if PNG_HDR.size.times.all?{ |i| x[i].ord == PNG_HDR[i].ord } # encoding error workaround
-          # raw image data
-          @data = x
-        else
-          raise "Don't know what #{x.inspect} is"
-        end
-      end
-
-      d = data[0,PNG_HDR.size]
-      if d != PNG_HDR
-        puts "[!] first #{PNG_HDR.size} bytes must be #{PNG_HDR.inspect}, but got #{d.inspect}".red
-      end
-
-      io = StringIO.new(data)
-      io.seek PNG_HDR.size
+    def _read_png io
       while !io.eof?
         chunk = Chunk.from_stream(io)
         chunk.idx = @chunks.size
         @chunks << chunk
-        case chunk
-        when Chunk::IHDR
-          @header = chunk
-        when Chunk::IEND
-          break
+        break if chunk.is_a?(Chunk::IEND)
+      end
+    end
+
+    def _from_io io
+      # Puts ios into binary mode.
+      # Once a stream is in binary mode, it cannot be reset to nonbinary mode.
+      io.binmode
+
+      hdr = io.read(BMP_HDR.size)
+      if hdr == BMP_HDR
+        _read_bmp io
+      else
+        hdr << io.read(PNG_HDR.size - BMP_HDR.size)
+        if hdr == PNG_HDR
+          _read_png io
+        else
+          raise "Unsupported header #{hdr.inspect} in #{io.inspect}"
         end
       end
+
       unless io.eof?
-        offset    = io.tell
+        offset     = io.tell
         @extradata = io.read
         puts "[?] #{@extradata.size} bytes of extra data after image end (IEND), offset = 0x#{offset.to_s(16)}".red
       end
@@ -152,6 +155,12 @@ module ZPNG
     ###########################################################################
     # chunks access
 
+    def ihdr
+      @ihdr ||= @chunks.find{ |c| c.is_a?(Chunk::IHDR) }
+    end
+    alias :header :ihdr
+    alias :hdr :ihdr
+
     def trns
       # not used "@trns ||= ..." here b/c it will call find() each time of there's no TRNS chunk
       defined?(@trns) ? @trns : (@trns=@chunks.find{ |c| c.is_a?(Chunk::TRNS) })
@@ -166,27 +175,27 @@ module ZPNG
     # image attributes
 
     def bpp
-      @header && @header.bpp
+      ihdr && @ihdr.bpp
     end
 
     def width
-      @header && @header.width
+      ihdr && @ihdr.width
     end
 
     def height
-      @header && @header.height
+      ihdr && @ihdr.height
     end
 
     def grayscale?
-      @header && @header.grayscale?
+      ihdr && @ihdr.grayscale?
     end
 
     def interlaced?
-      @header && @header.interlace != 0
+      ihdr && @ihdr.interlace != 0
     end
 
     def alpha_used?
-      @header && @header.alpha_used?
+      ihdr && @ihdr.alpha_used?
     end
 
     private
@@ -209,11 +218,19 @@ module ZPNG
     def imagedata
       @imagedata ||=
         begin
-          puts "[?] no image header, assuming non-interlaced RGB".yellow unless @header
+          puts "[?] no image header, assuming non-interlaced RGB".yellow unless header
           data = _imagedata
           #check_zlib_extradata data
           (data && data.size > 0) ? Zlib::Inflate.inflate(data) : ''
         end
+    end
+
+    def imagedata_size
+      if new_image?
+        @scanlines.map(&:size).inject(&:+)
+      else
+        imagedata.size
+      end
     end
 
 #    # check for extradata in zlib datastream after the end of compressed stream

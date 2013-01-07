@@ -166,7 +166,7 @@ module ZPNG
       end
       puts "[.] image size #{@img.width || '?'}x#{@img.height || '?'}, #{@img.bpp}bpp, #{color}"
       puts "[.] palette = #{@img.palette}" if @img.palette
-      puts "[.] uncompressed imagedata size = #{@img.imagedata.size} bytes"
+      puts "[.] uncompressed imagedata size = #{@img.imagedata_size} bytes"
       _conditional_hexdump(@img.imagedata, 3) if @options[:verbose] > 0
     end
 
@@ -191,7 +191,14 @@ module ZPNG
       @img.chunks.each do |chunk|
         next if idx && chunk.idx != idx
         colored_type = chunk.type.magenta
-        colored_crc  = chunk.crc_ok? ? 'CRC OK'.green : 'CRC ERROR'.red
+        colored_crc =
+          if chunk.crc == :no_crc # hack for BMP chunks (they have no CRC)
+            ''
+          elsif chunk.crc_ok?
+            'CRC OK'.green
+          else
+            'CRC ERROR'.red
+          end
         puts "[.] #{chunk.inspect(@options[:verbose]).sub(chunk.type, colored_type)} #{colored_crc}"
 
         _conditional_hexdump(chunk.data) unless chunk.size == 0
@@ -235,11 +242,11 @@ module ZPNG
         p sl
         case @options[:verbose]
         when 1
-          hexdump(sl.raw_data)
+          hexdump(sl.raw_data) if sl.raw_data
         when 2
           hexdump(sl.decoded_bytes)
         when 3..999
-          hexdump(sl.raw_data)
+          hexdump(sl.raw_data) if sl.raw_data
           hexdump(sl.decoded_bytes)
           puts
         end

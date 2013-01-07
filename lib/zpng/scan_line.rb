@@ -10,7 +10,7 @@ module ZPNG
     attr_accessor :image, :idx, :filter, :offset, :bpp
     attr_writer :decoded_bytes
 
-    def initialize image, idx
+    def initialize image, idx, params={}
       @image,@idx = image,idx
       @bpp = image.hdr.bpp
       raise "[!] zero bpp" if @bpp == 0
@@ -20,7 +20,8 @@ module ZPNG
       @BPP = (@bpp%8 == 0) && (@bpp>>3)
 
       if @image.new?
-        @decoded_bytes = "\x00" * (size-1)
+        @size = params[:size]
+        @decoded_bytes = params[:decoded_bytes] || "\x00" * (size-1)
         @filter = FILTER_NONE
         @offset = idx*size
       else
@@ -45,17 +46,20 @@ module ZPNG
 
     # total scanline size in bytes, INCLUDING leading 'filter' byte
     def size
-      w =
-        if image.interlaced?
-          image.adam7.scanline_width(idx)
-        else
-          image.width
+      @size ||=
+        begin
+          w =
+            if image.interlaced?
+              image.adam7.scanline_width(idx)
+            else
+              image.width
+            end
+          if @BPP
+            w*@BPP+1
+          else
+            (w*@bpp/8.0+1).ceil
+          end
         end
-      if @BPP
-        w*@BPP+1
-      else
-        (w*@bpp/8.0+1).ceil
-      end
     end
 
     def inspect
@@ -192,7 +196,8 @@ module ZPNG
         color =
           case @bpp
           when 24                     # RGB  8 bits per sample = 24bpp
-            Color.new(*raw.unpack('C3'))
+            # color_class is for (limited) BMP support
+            image.color_class.new(*raw.unpack('C3'))
           when 48                     # RGB 16 bits per sample = 48bpp
             Color.new(*raw.unpack('n3'), :depth => 16)
           else raise "COLOR_RGB unexpected bpp #@bpp"
@@ -213,7 +218,8 @@ module ZPNG
       when COLOR_RGBA                   # ALLOWED_DEPTHS: 8, 16
         case @bpp
         when 32                         # RGBA  8-bit/sample
-          return Color.new(*raw.unpack('C4'))
+          # color_class is for (limited) BMP support
+          return image.color_class.new(*raw.unpack('C4'))
         when 64                         # RGBA 16-bit/sample
           return Color.new(*raw.unpack('n4'), :depth => 16 )
         else raise "COLOR_RGBA unexpected bpp #@bpp"
@@ -309,6 +315,7 @@ module ZPNG
 
     public
     def crop! x, w
+      @size = nil # unmemoize self size b/c it's changed after crop
       if @BPP
         # great, crop is byte-aligned! :)
         decoded_bytes[0,x*@BPP]   = ''

@@ -20,6 +20,16 @@ SAMPLES =
     Dir[File.join(SAMPLES_DIR,'qr_*.png')]
   end
 
+def each_sample glob="*.png"
+  Dir[File.join(SAMPLES_DIR, glob)].each do |fname|
+    yield fname.sub(Dir.pwd+'/','')
+  end
+end
+
+def sample fname
+  File.join(SAMPLES_DIR, fname)
+end
+
 PNGSuite.init( File.join(SAMPLES_DIR, "png_suite") )
 
 RSpec.configure do |config|
