@@ -2,7 +2,7 @@ require 'stringio'
 
 module ZPNG
   class Image
-    attr_accessor :data, :header, :chunks, :scanlines, :imagedata
+    attr_accessor :data, :header, :chunks, :scanlines, :imagedata, :extradata
     alias :hdr :header
 
     include DeepCopyable
@@ -106,8 +106,8 @@ module ZPNG
       end
       unless io.eof?
         offset    = io.tell
-        extradata = io.read
-        puts "[?] #{extradata.size} bytes of extra data after image end (IEND), offset = 0x#{offset.to_s(16)}".red
+        @extradata = io.read
+        puts "[?] #{@extradata.size} bytes of extra data after image end (IEND), offset = 0x#{offset.to_s(16)}".red
       end
     end
 
