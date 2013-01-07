@@ -59,4 +59,16 @@ describe "CLI" do
 
     end
   end
+
+  it "cuts long metadata" do
+    fname = File.join(SAMPLES_DIR, "cats.png")
+    orig_stdout, out = $stdout, ""
+    begin
+      $stdout = StringIO.new(out)
+      lambda { ZPNG::CLI.new([fname]).run }.should_not raise_error
+    ensure
+      $stdout = orig_stdout
+    end
+    out.size.should < 100_000
+  end
 end

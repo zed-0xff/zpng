@@ -138,6 +138,16 @@ module ZPNG
       return if @img.metadata.empty?
       puts "[.] metadata:"
       @img.metadata.each do |k,v,h|
+        if @options[:verbose] < 2
+          if k.size > 512
+            puts "[?] key too long (#{k.size}), truncated to 512 chars".yellow
+            k = k[0,512] + "..."
+          end
+          if v.size > 512
+            puts "[?] value too long (#{v.size}), truncated to 512 chars".yellow
+            v = v[0,512] + "..."
+          end
+        end
         if h.keys.sort == [:keyword, :text]
           v.gsub!(/[\n\r]+/, "\n"+" "*19)
           printf "    %-12s : %s\n", k, v.gray
