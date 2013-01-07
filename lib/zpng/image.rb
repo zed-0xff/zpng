@@ -9,6 +9,10 @@ module ZPNG
 
     PNG_HDR = "\x89PNG\x0d\x0a\x1a\x0a"
 
+    # possible input params:
+    #   IO      of opened image file
+    #   String  with image file already readed
+    #   Hash    of image parameters to create new blank image
     def initialize x
       @chunks = []
       case x
@@ -78,9 +82,6 @@ module ZPNG
         if PNG_HDR.size.times.all?{ |i| x[i].ord == PNG_HDR[i].ord } # encoding error workaround
           # raw image data
           @data = x
-        elsif File.exist?(x)
-          # filename
-          @data = File.binread(x)
         else
           raise "Don't know what #{x.inspect} is"
         end
