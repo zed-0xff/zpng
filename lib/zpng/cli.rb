@@ -131,7 +131,7 @@ module ZPNG
     end
 
     def load_file fname
-      @img = Image.load fname
+      @img = Image.load fname, :verbose => true
     end
 
     def metadata

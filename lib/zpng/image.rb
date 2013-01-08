@@ -2,7 +2,7 @@ require 'stringio'
 
 module ZPNG
   class Image
-    attr_accessor :chunks, :scanlines, :imagedata, :extradata
+    attr_accessor :chunks, :scanlines, :imagedata, :extradata, :format, :verbose
 
     # now only for (limited) BMP support
     attr_accessor :color_class
@@ -17,9 +17,17 @@ module ZPNG
     #   IO      of opened image file
     #   String  with image file already readed
     #   Hash    of image parameters to create new blank image
-    def initialize x
+    def initialize x, h={}
       @chunks = []
       @color_class = Color
+      @format = :png
+      @verbose =
+        case h[:verbose]
+        when true;  1
+        when false; 0
+        else h[:verbose].to_i
+        end
+
       case x
         when IO
           _from_io x
@@ -41,9 +49,9 @@ module ZPNG
 
     class << self
       # load image from file
-      def load fname
+      def load fname, h={}
         open(fname,"rb") do |f|
-          self.new(f)
+          self.new(f,h)
         end
       end
       alias :load_file :load
@@ -111,7 +119,7 @@ module ZPNG
       unless io.eof?
         offset     = io.tell
         @extradata = io.read
-        puts "[?] #{@extradata.size} bytes of extra data after image end (IEND), offset = 0x#{offset.to_s(16)}".red
+        puts "[?] #{@extradata.size} bytes of extra data after image end (IEND), offset = 0x#{offset.to_s(16)}".red if @verbose >= 1
       end
     end
 

@@ -32,6 +32,13 @@ module ZPNG
       def inspect *args
         @bmp_hdr.inspect
       end
+      def method_missing mname, *args
+        if @bmp_hdr.respond_to?(mname)
+          @bmp_hdr.send(mname,*args)
+        else
+          super
+        end
+      end
     end
 
     class Color < ZPNG::Color
@@ -61,6 +68,7 @@ module ZPNG
 
         @new_image = true
         @color_class = BMP::Color
+        @format = :bmp
         @chunks << BmpHdrPseudoChunk.new(hdr)
 
         # http://en.wikipedia.org/wiki/BMP_file_format#Pixel_storage
