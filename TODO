@@ -1,3 +1,6 @@
+[ ] benchmark accessing very last PNG scanline
+[ ] use iostruct
+
 ways to hide info in PNG:
  * IHDR: longer than 13 bytes
  * IEND:
