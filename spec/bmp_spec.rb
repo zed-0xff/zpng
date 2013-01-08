@@ -1,14 +1,16 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
-each_sample("mouse.bmp") do |fname|
+each_sample("mouse*.bmp") do |fname|
   describe fname do
-    subject(:image){ ZPNG::Image.load(fname) }
+    subject(:bmp){ ZPNG::Image.load(fname) }
+    let!(:png){ ZPNG::Image.load(fname.sub(".bmp",".png")) }
 
-    its(:width ){ should == 32 }
-    its(:height){ should == 32 }
+    its(:width ){ should == png.width }
+    its(:height){ should == png.height }
+    its(:format){ should == :bmp }
 
     it "should be equal to PNG" do
-      image.should == ZPNG::Image.load(fname.sub(".bmp",".png"))
+      bmp.should == png
     end
   end
 end
