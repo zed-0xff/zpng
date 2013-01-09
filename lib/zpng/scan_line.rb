@@ -10,18 +10,6 @@ module ZPNG
     attr_accessor :image, :idx, :filter, :offset, :bpp
     attr_writer :decoded_bytes
 
-    # XXX: also add variables here when adding new instance variables
-    def marshal_dump
-      # defining marshal_dump & marshal_load b/c we override some methods with
-      # singleton methods for performance reason and singletons can't be marshaled
-      [@image, @idx, @filter, @offset, @bpp, @BPP, @decoded_bytes]
-    end
-
-    # XXX: also add variables here when adding new instance variables
-    def marshal_load a
-      @image, @idx, @filter, @offset, @bpp, @BPP, @decoded_bytes = a
-    end
-
     def initialize image, idx, params={}
       @image,@idx = image,idx
       @bpp = image.hdr.bpp
@@ -311,34 +299,34 @@ module ZPNG
 
     private
 
-#    def prev_scanline_byte x
-#      if image.interlaced?
-#        # When the image is interlaced, each pass of the interlace pattern is
-#        # treated as an independent image for filtering purposes
-#        image.adam7.pass_start?(@idx) ? 0 : image.scanlines[@idx-1].decoded_bytes.getbyte(x)
-#      elsif @idx > 0
-#        image.scanlines[@idx-1].decoded_bytes.getbyte(x)
-#      else
-#        0
-#      end
-#    end
+    module InterlacedMixIn
+      def prev_scanline_byte x
+        # When the image is interlaced, each pass of the interlace pattern is
+        # treated as an independent image for filtering purposes
+        image.adam7.pass_start?(@idx) ? 0 : image.scanlines[@idx-1].decoded_bytes.getbyte(x)
+      end
+    end
+
+    module NotFirstLineMixIn
+      def prev_scanline_byte x
+        image.scanlines[@idx-1].decoded_bytes.getbyte(x)
+      end
+    end
+
+    module FirstLineMixIn
+      def prev_scanline_byte x
+        0
+      end
+    end
 
     def prev_scanline_byte x
-      # defining instance methods gives ~10% speed boost
+      # defining instance methods gives 10-15% speed boost
       if image.interlaced?
-        def self.prev_scanline_byte x
-          # When the image is interlaced, each pass of the interlace pattern is
-          # treated as an independent image for filtering purposes
-          image.adam7.pass_start?(@idx) ? 0 : image.scanlines[@idx-1].decoded_bytes.getbyte(x)
-        end
+        extend InterlacedMixIn
       elsif @idx > 0
-        def self.prev_scanline_byte x
-          image.scanlines[@idx-1].decoded_bytes.getbyte(x)
-        end
+        extend NotFirstLineMixIn
       else
-        def self.prev_scanline_byte x
-          0
-        end
+        extend FirstLineMixIn
       end
       # call newly created method
       prev_scanline_byte x
