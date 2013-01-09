@@ -10,6 +10,18 @@ module ZPNG
     attr_accessor :image, :idx, :filter, :offset, :bpp
     attr_writer :decoded_bytes
 
+    # XXX: also add variables here when adding new instance variables
+    def marshal_dump
+      # defining marshal_dump & marshal_load b/c we override some methods with
+      # singleton methods for performance reason and singletons can't be marshaled
+      [@image, @idx, @filter, @offset, @bpp, @BPP, @decoded_bytes]
+    end
+
+    # XXX: also add variables here when adding new instance variables
+    def marshal_load a
+      @image, @idx, @filter, @offset, @bpp, @BPP, @decoded_bytes = a
+    end
+
     def initialize image, idx, params={}
       @image,@idx = image,idx
       @bpp = image.hdr.bpp
@@ -260,15 +272,24 @@ module ZPNG
     private
 
     def prev_scanline_byte x
+      # defining instance methods gives ~10% speed boost
       if image.interlaced?
-        # When the image is interlaced, each pass of the interlace pattern is
-        # treated as an independent image for filtering purposes
-        image.adam7.pass_start?(@idx) ? 0 : image.scanlines[@idx-1].decoded_bytes[x].ord
+        def self.prev_scanline_byte x
+          # When the image is interlaced, each pass of the interlace pattern is
+          # treated as an independent image for filtering purposes
+          image.adam7.pass_start?(@idx) ? 0 : image.scanlines[@idx-1].decoded_bytes[x].ord
+        end
       elsif @idx > 0
-        image.scanlines[@idx-1].decoded_bytes[x].ord
+        def self.prev_scanline_byte x
+          image.scanlines[@idx-1].decoded_bytes[x].ord
+        end
       else
-        0
+        def self.prev_scanline_byte x
+          0
+        end
       end
+      # call newly created method
+      prev_scanline_byte x
     end
 
     def decode_byte x, b0, bpp1
