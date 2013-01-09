@@ -74,12 +74,8 @@ module ZPNG
 
     def to_ascii *args
       @image.width.times.map do |i|
-        decode_pixel(i).to_ascii(*args)
+        self[i].to_ascii(*args)
       end.join
-    end
-
-    def [] x
-      decode_pixel(x)
     end
 
     def []= x, color
@@ -141,10 +137,10 @@ module ZPNG
       end # case image.hdr.color
     end
 
-    def decode_pixel x
+    def [] x
       raw =
         if @BPP
-          # 8, 16 or 32 bits per pixel
+          # 8, 16, 24, 32, 48 bits per pixel
           decoded_bytes[x*@BPP, @BPP]
         else
           # 1, 2 or 4 bits per pixel
@@ -196,8 +192,12 @@ module ZPNG
         color =
           case @bpp
           when 24                     # RGB  8 bits per sample = 24bpp
-            # color_class is for (limited) BMP support
-            image.color_class.new(*raw.unpack('C3'))
+            if image.trns
+              extend Mixins::RGB24_TRNS
+            else
+              extend Mixins::RGB24
+            end
+            return self[x]
           when 48                     # RGB 16 bits per sample = 48bpp
             Color.new(*raw.unpack('n3'), :depth => 16)
           else raise "COLOR_RGB unexpected bpp #@bpp"
@@ -218,8 +218,8 @@ module ZPNG
       when COLOR_RGBA                   # ALLOWED_DEPTHS: 8, 16
         case @bpp
         when 32                         # RGBA  8-bit/sample
-          # color_class is for (limited) BMP support
-          return image.color_class.new(*raw.unpack('C4'))
+          extend Mixins::RGBA32
+          return self[x]
         when 64                         # RGBA 16-bit/sample
           return Color.new(*raw.unpack('n4'), :depth => 16 )
         else raise "COLOR_RGBA unexpected bpp #@bpp"
@@ -299,34 +299,14 @@ module ZPNG
 
     private
 
-    module InterlacedMixIn
-      def prev_scanline_byte x
-        # When the image is interlaced, each pass of the interlace pattern is
-        # treated as an independent image for filtering purposes
-        image.adam7.pass_start?(@idx) ? 0 : image.scanlines[@idx-1].decoded_bytes.getbyte(x)
-      end
-    end
-
-    module NotFirstLineMixIn
-      def prev_scanline_byte x
-        image.scanlines[@idx-1].decoded_bytes.getbyte(x)
-      end
-    end
-
-    module FirstLineMixIn
-      def prev_scanline_byte x
-        0
-      end
-    end
-
     def prev_scanline_byte x
       # defining instance methods gives 10-15% speed boost
       if image.interlaced?
-        extend InterlacedMixIn
+        extend Mixins::Interlaced
       elsif @idx > 0
-        extend NotFirstLineMixIn
+        extend Mixins::NotFirstLine
       else
-        extend FirstLineMixIn
+        extend Mixins::FirstLine
       end
       # call newly created method
       prev_scanline_byte x
