@@ -250,12 +250,11 @@ module ZPNG
           # number of bytes per complete pixel, rounding up to one
           bpp1 = (@bpp/8.0).ceil
 
-          s = ''
+          s = "\x00" * size
           (size-1).times do |i|
-            b0 = (i-bpp1) >= 0 ? s[i-bpp1] : nil
-            s[i] = decode_byte(i, b0, bpp1)
+            b0 = (i-bpp1) >= 0 ? s.getbyte(i-bpp1) : 0
+            s.setbyte(i, decode_byte(i, b0, bpp1))
           end
-#          print Hexdump.dump(s[0,16])
           s
         end
     end
@@ -277,11 +276,11 @@ module ZPNG
         def self.prev_scanline_byte x
           # When the image is interlaced, each pass of the interlace pattern is
           # treated as an independent image for filtering purposes
-          image.adam7.pass_start?(@idx) ? 0 : image.scanlines[@idx-1].decoded_bytes[x].ord
+          image.adam7.pass_start?(@idx) ? 0 : image.scanlines[@idx-1].decoded_bytes.getbyte(x)
         end
       elsif @idx > 0
         def self.prev_scanline_byte x
-          image.scanlines[@idx-1].decoded_bytes[x].ord
+          image.scanlines[@idx-1].decoded_bytes.getbyte(x)
         end
       else
         def self.prev_scanline_byte x
@@ -293,11 +292,11 @@ module ZPNG
     end
 
     def decode_byte x, b0, bpp1
-      raw = @image.imagedata[@offset+x+1]
+      raw = @image.imagedata.getbyte(@offset+x+1)
 
       unless raw
         STDERR.puts "[!] #{self.class}: ##@idx: no data at pos #{x}".red
-        raw = 0.chr
+        raw = 0
       end
 
       case @filter
@@ -305,22 +304,20 @@ module ZPNG
         raw
 
       when FILTER_SUB     # 1
-        return raw unless b0
-        ((raw.ord + b0.ord) & 0xff).chr
+        raw + b0
 
       when FILTER_UP      # 2
-        ((raw.ord + prev_scanline_byte(x)) & 0xff).chr
+        raw + prev_scanline_byte(x)
 
       when FILTER_AVERAGE # 3
-        prev = (b0 && b0.ord) || 0
         prior = prev_scanline_byte(x)
-        ((raw.ord + (prev + prior)/2) & 0xff).chr
+        raw + (b0 + prior)/2
 
       when FILTER_PAETH   # 4
-        pa = (b0 && b0.ord) || 0
+        pa = b0
         pb = prev_scanline_byte(x)
-        pc = b0 ? prev_scanline_byte(x-bpp1) : 0
-        ((raw.ord + paeth_predictor(pa, pb, pc)) & 0xff).chr
+        pc = (x-bpp1) >= 0 ? prev_scanline_byte(x-bpp1) : 0
+        raw + paeth_predictor(pa, pb, pc)
       else
         raise "invalid ScanLine filter #{@filter}"
       end
