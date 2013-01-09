@@ -9,6 +9,7 @@ ways to hide info in PNG:
  * TEXT chunks
  * zTXT chunks
     * comp_method
+    * data after compressed data?
  * IDAT:
     * data after last scanline
     * last bits in scanline when bpp%8 != 0
