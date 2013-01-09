@@ -6,6 +6,9 @@ class String
       define_method color do
         color(color)
       end
+      define_method "bright_#{color}" do
+        color(color).bright
+      end
     end
   end
 
