@@ -300,14 +300,16 @@ module ZPNG
     end
 
     def [] x, y
+      # extracting this check into a module => +1-2% speed
       x,y = adam7.convert_coords(x,y) if interlaced?
       scanlines[y][x]
     end
 
-    def []= x, y, newpixel
+    def []= x, y, newcolor
+      # extracting these checks into a module => +1-2% speed
       decode_all_scanlines
       x,y = adam7.convert_coords(x,y) if interlaced?
-      scanlines[y][x] = newpixel
+      scanlines[y][x] = newcolor
     end
 
     # we must decode all scanlines before doing any modifications
@@ -361,16 +363,16 @@ module ZPNG
     end
 
     def export
-      # fill @imagedata, if not already filled
-      imagedata unless new_image?
+      # XXX creating new IDAT must be BEFORE deleting old IDAT chunks
+      idat = Chunk::IDAT.new(
+        :data => Zlib::Deflate.deflate(scanlines.map(&:export).join, 9)
+      )
 
       # delete old IDAT chunks
       @chunks.delete_if{ |c| c.is_a?(Chunk::IDAT) }
 
-      # fill first_idat @data with compressed imagedata
-      @chunks << Chunk::IDAT.new(
-        :data => Zlib::Deflate.deflate(scanlines.map(&:export).join, 9)
-      )
+      # add newly created IDAT
+      @chunks << idat
 
       # delete IEND chunk(s) b/c we just added a new chunk and IEND must be the last one
       @chunks.delete_if{ |c| c.is_a?(Chunk::IEND) }
