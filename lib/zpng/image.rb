@@ -43,6 +43,20 @@ module ZPNG
       end
     end
 
+    def inspect
+      "#<ZPNG::Image " +
+      %w'width height bpp chunks scanlines'.map do |k|
+        v = case (v = send(k))
+          when Array
+            "[#{v.size} entries]"
+          when String
+            v.size > 40 ? "[#{v.bytesize} bytes]" : v.inspect
+          else v.inspect
+        end
+        "#{k}=#{v}"
+      end.compact.join(", ") + ">"
+    end
+
     def adam7
       @adam7 ||= Adam7Decoder.new(self)
     end
