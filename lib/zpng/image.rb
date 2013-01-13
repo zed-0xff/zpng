@@ -36,7 +36,7 @@ module ZPNG
         when Hash
           _from_hash x
         else
-          raise "unsupported input data type #{x.class}"
+          raise NotSupported, "unsupported input data type #{x.class}"
       end
       if palette && hdr && hdr.depth
         palette.max_colors = 2**hdr.depth
@@ -112,7 +112,7 @@ module ZPNG
         if hdr == PNG_HDR
           _read_png io
         else
-          raise "Unsupported header #{hdr.inspect} in #{io.inspect}"
+          raise NotSupported, "Unsupported header #{hdr.inspect} in #{io.inspect}"
         end
       end
 
@@ -152,7 +152,7 @@ module ZPNG
           a = trns.data.unpack('n3').map{ |v| v & (2**hdr.depth-1) }
           Color.new(*a, :depth => hdr.depth)
         else
-          raise "color2alpha only intended for GRAYSCALE & RGB color modes"
+          raise Exception, "color2alpha only intended for GRAYSCALE & RGB color modes"
         end
 
       color == @alpha_color ? 0 : (2**hdr.depth-1)
@@ -372,12 +372,12 @@ module ZPNG
       decode_all_scanlines
 
       x,y,h,w = (params[:x]||0), (params[:y]||0), params[:height], params[:width]
-      raise "negative params not allowed" if [x,y,h,w].any?{ |x| x < 0 }
+      raise ArgumentError, "negative params not allowed" if [x,y,h,w].any?{ |x| x < 0 }
 
       # adjust crop sizes if they greater than image sizes
       h = self.height-y if (y+h) > self.height
       w = self.width-x if (x+w) > self.width
-      raise "negative params not allowed (p2)" if [x,y,h,w].any?{ |x| x < 0 }
+      raise ArgumentError, "negative params not allowed (p2)" if [x,y,h,w].any?{ |x| x < 0 }
 
       # delete excess scanlines at tail
       scanlines[(y+h)..-1] = [] if (y+h) < scanlines.size

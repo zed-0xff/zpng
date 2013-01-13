@@ -1,6 +1,12 @@
 require 'zlib'
 require 'stringio'
 
+module ZPNG
+  class Exception < ::StandardError; end
+  class NotSupported  < Exception; end
+  class ArgumentError < Exception; end
+end
+
 require 'zpng/string_ext'
 require 'zpng/deep_copyable'
 
