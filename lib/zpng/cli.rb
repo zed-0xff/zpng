@@ -37,6 +37,7 @@ module ZPNG
         opts.separator ""
         opts.on("-S", "--scanlines", "Show scanlines info"){ @actions << :scanlines }
         opts.on("-P", "--palette", "Show palette"){ @actions << :palette }
+        opts.on(      "--colors", "Show colors used"){ @actions << :colors }
 
         opts.on "-E", "--extract-chunk ID", Integer, "extract a single chunk" do |id|
           @actions << [:extract_chunk, id]
@@ -72,6 +73,9 @@ module ZPNG
         opts.on "-q", "--quiet", "Silent any warnings (can be used multiple times)" do |v|
           @options[:verbose] -= 1
         end
+        opts.on "-I", "--console", "opens IRB console with specified image loaded" do |v|
+          @actions << :console
+        end
       end
 
       if (argv = optparser.parse(@argv)).empty?
@@ -86,8 +90,7 @@ module ZPNG
           puts if idx > 0
           puts "[.] #{fname}".color(:green)
         end
-        @file_idx  = idx
-        @file_name = fname
+        @fname = fname
 
         @zpng = load_file fname
 
@@ -260,6 +263,52 @@ module ZPNG
           row.insert(0,"  color %4s:  " % "##{(offset/3)}")
         end
       end
+    end
+
+    def colors
+      h=Hash.new(0)
+      h2=Hash.new{ |k,v| k[v] = [] }
+      @img.each_pixel do |c,x,y|
+        h[c] += 1
+        if h[c] < 6
+          h2[c] << [x,y]
+        end
+      end
+
+      xlen = @img.width.to_s.size
+      ylen = @img.height.to_s.size
+
+      h.sort_by{ |c,n| [n] + h2[c].first.reverse }.each do |c,n|
+        printf "%6d : %s : ", n, c.inspect
+        h2[c].each_with_index do |a,idx|
+          print ";" if idx > 0
+          if idx >= 4
+            print " ..."
+            break
+          end
+          printf " %*d,%*d", xlen, a[0], ylen, a[1]
+        end
+        puts
+      end
+    end
+
+    def console
+      ARGV.clear # clear ARGV so IRB is not confused
+      require 'irb'
+      m0 = IRB.method(:setup)
+      img = @img
+
+      # override IRB.setup, called from IRB.start
+      IRB.define_singleton_method :setup do |*args|
+        m0.call *args
+        conf[:IRB_RC] = Proc.new do |context|
+          context.main.instance_variable_set '@img', img
+          context.main.define_singleton_method(:img){ @img }
+        end
+      end
+
+      puts "[.] img = ZPNG::Image.load(#{@fname.inspect})".gray
+      IRB.start
     end
   end
 end
