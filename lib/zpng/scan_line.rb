@@ -23,7 +23,7 @@ module ZPNG
         @size = params[:size]
         @decoded_bytes = params[:decoded_bytes] || "\x00" * (size-1)
         @filter = FILTER_NONE
-        @offset = idx*size
+        @offset = params[:offset] || idx*size
       else
         @offset =
           if image.interlaced?
@@ -48,24 +48,27 @@ module ZPNG
     def size
       @size ||=
         begin
-          w =
-            if image.interlaced?
-              image.adam7.scanline_width(idx)
-            else
-              image.width
-            end
           if @BPP
-            w*@BPP+1
+            width*@BPP+1
           else
-            (w*@bpp/8.0+1).ceil
+            (width*@bpp/8.0+1).ceil
           end
         end
+    end
+
+    # scanline width in pixels
+    def width
+      if image.interlaced?
+        image.adam7.scanline_width(idx)
+      else
+        image.width
+      end
     end
 
     def inspect
       if image.interlaced?
         "#<ZPNG::ScanLine idx=%-2d offset=%-3d width=%-2d size=%-2d bpp=%d filter=%d>" %
-          [idx, offset, image.adam7.scanline_width(idx), size, bpp, filter]
+          [idx, offset, width, size, bpp, filter]
       else
         "#<ZPNG::ScanLine idx=%-2d offset=%-3d size=%-2d bpp=%d filter=%d>" %
           [idx, offset, size, bpp, filter]
@@ -89,9 +92,9 @@ module ZPNG
         raise "invalid shift #{shift}" if shift < 0 || shift > 7
 
         pos = x*@bpp/8
-        b = decoded_bytes[pos].ord
+        b = decoded_bytes.getbyte(pos)
         b = (b & (0xff-(mask<<shift))) | ((color_idx & mask) << shift)
-        decoded_bytes[pos] = b.chr
+        decoded_bytes.setbyte(pos, b)
         # TODO: transparency in TRNS
 
       when COLOR_GRAYSCALE              # ALLOWED_DEPTHS: 1, 2, 4, 8, 16
@@ -369,6 +372,16 @@ module ZPNG
     def export
       # we export in FILTER_NONE mode
       FILTER_NONE.chr + decoded_bytes
+    end
+
+    def each_pixel
+      width.times do |i|
+        yield self[i], i
+      end
+    end
+
+    def pixels
+      Pixels.new(self)
     end
   end
 end

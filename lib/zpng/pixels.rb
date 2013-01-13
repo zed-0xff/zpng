@@ -2,15 +2,33 @@ module ZPNG
   class Pixels
     include Enumerable
 
-    def initialize image
-      @image = image
+    module ImageEnum
+      def each
+        @image.height.times do |y|
+          @image.width.times do |x|
+            yield @image[x,y]
+          end
+        end
+      end
     end
 
-    def each
-      @image.height.times do |y|
-        @image.width.times do |x|
-          yield @image[x,y]
+    module ScanLineEnum
+      def each
+        @scanline.width.times do |x|
+          yield @scanline[x]
         end
+      end
+    end
+
+    def initialize x
+      case x
+      when Image
+        @image = x
+        extend ImageEnum
+      when ScanLine
+        @scanline = x
+        extend ScanLineEnum
+      else raise ArgumentError, "don't know how to enumerate #{x.inspect}"
       end
     end
 
