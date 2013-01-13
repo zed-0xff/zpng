@@ -249,20 +249,20 @@ module ZPNG
             s = imagedata[@offset+1, size-1]
 
           when FILTER_SUB     # 1
-            s = "\x00" * size
+            s = "\x00" * (size-1)
             s[0,bpp1] = imagedata[@offset+1,bpp1]
             bpp1.upto(size-2) do |i|
               s.setbyte(i, imagedata.getbyte(@offset+i+1) + s.getbyte(i-bpp1))
             end
 
           when FILTER_UP      # 2
-            s = "\x00" * size
+            s = "\x00" * (size-1)
             0.upto(size-2) do |i|
               s.setbyte(i, imagedata.getbyte(@offset+i+1) + prev_scanline_byte(i))
             end
 
           when FILTER_AVERAGE # 3
-            s = "\x00" * size
+            s = "\x00" * (size-1)
             0.upto(bpp1-1) do |i|
               s.setbyte(i, imagedata.getbyte(@offset+i+1) + prev_scanline_byte(i)/2)
             end
@@ -273,7 +273,7 @@ module ZPNG
             end
 
           when FILTER_PAETH   # 4
-            s = "\x00" * size
+            s = "\x00" * (size-1)
             0.upto(bpp1-1) do |i|
               s.setbyte(i, imagedata.getbyte(@offset+i+1) + prev_scanline_byte(i))
             end
