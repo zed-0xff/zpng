@@ -421,9 +421,13 @@ module ZPNG
     end
 
     def == other_image
-      width  == other_image.width &&
-      height == other_image.height &&
-      pixels == other_image.pixels
+      return false unless other_image.is_a?(Image)
+      return false if width  != other_image.width
+      return false if height != other_image.height
+      each_pixel do |c,x,y|
+        return false if c != other_image[x,y]
+      end
+      true
     end
 
     def each_pixel &block
