@@ -46,12 +46,21 @@ module ZPNG
       def initialize *a
         h = a.last.is_a?(Hash) ? a.pop : {}
         case a.size
-        when 3,4
-          # BGR, ABGR
+        when 3
+          # BGR
           super *a.reverse, h
+        when 4
+          # ABGR
+          super a[2], a[1], a[0], a[3], h
         else
           super
         end
+      end
+    end
+
+    module ImageMixin
+      def imagedata
+        @imagedata ||= @scanlines.sort_by(&:offset).map(&:decoded_bytes).join
       end
     end
 
@@ -79,13 +88,17 @@ module ZPNG
 
         @scanlines = []
         self.height.times do |idx|
+          offset = io.tell - imagedata_offset
           data = io.read(row_size)
           # BMP scanlines layout is upside-down
-          @scanlines.unshift ScanLine.new(self, height-idx-1,
+          @scanlines.unshift ScanLine.new(self, self.height-idx-1,
                                           :decoded_bytes => data,
-                                          :size => row_size
+                                          :size   => row_size,
+                                          :offset => offset
                                          )
         end
+
+        extend ImageMixin
       end
     end # Reader
   end # BMP

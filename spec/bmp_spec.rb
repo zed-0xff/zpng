@@ -12,5 +12,9 @@ each_sample("mouse*.bmp") do |fname|
     it "should be equal to PNG" do
       bmp.should == png
     end
+
+    it "should restore original imagedata" do
+      File.binread(fname).should include(bmp.imagedata)
+    end
   end
 end
