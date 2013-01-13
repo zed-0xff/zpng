@@ -16,5 +16,6 @@ ways to hide info in PNG:
  * PLTE:
     * raw letters
     * stegano
+    * many palette entries with same color => visually same pixels but, different color idx
  * custom chunks
  * crc
