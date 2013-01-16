@@ -235,7 +235,6 @@ module ZPNG
     end
 
     def decoded_bytes
-      #raise if caller.size > 50
       @decoded_bytes ||=
         begin
           imagedata = @image.imagedata
@@ -371,7 +370,13 @@ module ZPNG
 
     def export
       # we export in FILTER_NONE mode
-      FILTER_NONE.chr + decoded_bytes
+      # [] is for preventing spare tail bytes that can break scanlines sequence
+      if @decoded_bytes
+        FILTER_NONE.chr + decoded_bytes[0,size-1]
+      else
+        # scanline was never decoded => export it as-is to save memory & CPU
+        @image.imagedata[@offset, size]
+      end
     end
 
     def each_pixel
