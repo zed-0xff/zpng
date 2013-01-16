@@ -235,6 +235,31 @@ module ZPNG
         data_chunks.map(&:data).join
       end
     end
+
+    # unpack zlib,
+    # on errors keep going and try to return maximum possible data
+    def _safe_inflate data
+      zi = Zlib::Inflate.new
+      pos = 0; r = ''
+      begin
+        # save some memory by not using String#[] when not necessary
+        r << zi.inflate(pos==0 ? data : data[pos..-1])
+        # decompress OK
+      rescue Zlib::BufError
+        # tried to decompress, but got EOF - need more data
+        puts "[!] #{$!.inspect}".red if @verbose >= -2
+      rescue Zlib::DataError
+        puts "[!] #{$!.inspect}".red if @verbose >= -2
+        pos += zi.total_in
+        retry
+      rescue Zlib::NeedDict
+        puts "[!] #{$!.inspect}".red if @verbose >= -2
+      end
+      r == "" ? nil : r
+    ensure
+      zi.close if zi && !zi.closed?
+    end
+
     public
 
     def imagedata
@@ -243,7 +268,7 @@ module ZPNG
           puts "[?] no image header, assuming non-interlaced RGB".yellow unless header
           data = _imagedata
           #check_zlib_extradata data
-          (data && data.size > 0) ? Zlib::Inflate.inflate(data) : ''
+          (data && data.size > 0) ? _safe_inflate(data) : ''
         end
     end
 
