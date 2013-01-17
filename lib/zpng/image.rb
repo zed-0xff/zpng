@@ -8,6 +8,9 @@ module ZPNG
     attr_accessor :color_class
 
     include DeepCopyable
+    alias :clone :deep_copy
+    alias :dup   :deep_copy
+
     include BMP::Reader
 
     PNG_HDR = "\x89PNG\x0d\x0a\x1a\x0a".force_encoding('binary')
@@ -73,8 +76,8 @@ module ZPNG
     end
 
     # save image to file
-    def save fname
-      File.open(fname,"wb"){ |f| f << export }
+    def save fname, options={}
+      File.open(fname,"wb"){ |f| f << export(options) }
     end
 
     # flag that image is just created, and NOT loaded from file
@@ -247,14 +250,29 @@ module ZPNG
         # decompress OK
       rescue Zlib::BufError
         # tried to decompress, but got EOF - need more data
-        puts "[!] #{$!.inspect}".red if @verbose >= -2
+        puts "[!] #{$!.inspect}".red if @verbose >= -1
+        # collect any remaining data in decompress buffer
+        r << zi.flush_next_out
       rescue Zlib::DataError
-        puts "[!] #{$!.inspect}".red if @verbose >= -2
-        pos += zi.total_in
-        retry
+        puts "[!] #{$!.inspect}".red if @verbose >= -1
+        #p [pos, zi.total_in, zi.total_out, data.size, r.size]
+        r << zi.flush_next_out
+        # XXX TODO try to skip error and continue
+#        printf "[d] pos=%d/%d t_in=%d t_out=%d bytes_ok=%d\n".gray, pos, data.size,
+#          zi.total_in, zi.total_out, r.size
+#        if pos < zi.total_in
+#          pos = zi.total_in
+#        else
+#          pos += 1
+#        end
+#        pos = 0
+#        retry if pos < data.size
       rescue Zlib::NeedDict
-        puts "[!] #{$!.inspect}".red if @verbose >= -2
+        puts "[!] #{$!.inspect}".red if @verbose >= -1
+        # collect any remaining data in decompress buffer
+        r << zi.flush_next_out
       end
+
       r == "" ? nil : r
     ensure
       zi.close if zi && !zi.closed?
@@ -387,10 +405,13 @@ module ZPNG
       end
     end
 
-    def export
+    def export options = {}
+      # allow :zlib_level => nil
+      options[:zlib_level] = 9 unless options.key?(:zlib_level)
+
       # XXX creating new IDAT must be BEFORE deleting old IDAT chunks
       idat = Chunk::IDAT.new(
-        :data => Zlib::Deflate.deflate(scanlines.map(&:export).join, 9)
+        :data => Zlib::Deflate.deflate(scanlines.map(&:export).join, options[:zlib_level])
       )
 
       # delete old IDAT chunks

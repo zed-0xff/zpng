@@ -33,7 +33,7 @@ module ZPNG
           end
         if @filter = image.imagedata[@offset]
           @filter = @filter.ord
-        else
+        elsif @image.verbose >= -1
           STDERR.puts "[!] #{self.class}: ##@idx: no data at pos 0, scanline dropped".red
         end
       end
@@ -237,7 +237,12 @@ module ZPNG
     def decoded_bytes
       @decoded_bytes ||=
         begin
-          imagedata = @image.imagedata
+          raw = @image.imagedata[@offset+1, size-1]
+          if raw.size < size-1
+            # handle broken images when data ends in the middle of scanline
+            raw += "\x00" * (size-1-raw.size)
+          end
+          # TODO: check if converting raw to array would give any speedup
 
           # number of bytes per complete pixel, rounding up to one
           bpp1 = (@bpp/8.0).ceil
@@ -245,40 +250,38 @@ module ZPNG
           case @filter
 
           when FILTER_NONE    # 0
-            s = imagedata[@offset+1, size-1]
+            s = raw
 
           when FILTER_SUB     # 1
             s = "\x00" * (size-1)
-            s[0,bpp1] = imagedata[@offset+1,bpp1]
+            s[0,bpp1] = raw[0,bpp1] # TODO: optimize
             bpp1.upto(size-2) do |i|
-              s.setbyte(i, imagedata.getbyte(@offset+i+1) + s.getbyte(i-bpp1))
+              s.setbyte(i, raw.getbyte(i) + s.getbyte(i-bpp1))
             end
 
           when FILTER_UP      # 2
             s = "\x00" * (size-1)
             0.upto(size-2) do |i|
-              s.setbyte(i, imagedata.getbyte(@offset+i+1) + prev_scanline_byte(i))
+              s.setbyte(i, raw.getbyte(i) + prev_scanline_byte(i))
             end
 
           when FILTER_AVERAGE # 3
             s = "\x00" * (size-1)
             0.upto(bpp1-1) do |i|
-              s.setbyte(i, imagedata.getbyte(@offset+i+1) + prev_scanline_byte(i)/2)
+              s.setbyte(i, raw.getbyte(i) + prev_scanline_byte(i)/2)
             end
             bpp1.upto(size-2) do |i|
-              s.setbyte(i,
-                imagedata.getbyte(@offset+i+1) + (s.getbyte(i-bpp1) + prev_scanline_byte(i))/2
-              )
+              s.setbyte(i, raw.getbyte(i) + (s.getbyte(i-bpp1) + prev_scanline_byte(i))/2)
             end
 
           when FILTER_PAETH   # 4
             s = "\x00" * (size-1)
             0.upto(bpp1-1) do |i|
-              s.setbyte(i, imagedata.getbyte(@offset+i+1) + prev_scanline_byte(i))
+              s.setbyte(i, raw.getbyte(i) + prev_scanline_byte(i))
             end
             bpp1.upto(size-2) do |i|
               s.setbyte(i,
-                imagedata.getbyte(@offset+i+1) +
+                raw.getbyte(i) +
                 paeth_predictor(s.getbyte(i-bpp1), prev_scanline_byte(i), prev_scanline_byte(i-bpp1))
               )
             end
@@ -297,6 +300,25 @@ module ZPNG
 
     def raw_data
       @offset ? @image.imagedata[@offset, size] : ''
+    end
+
+    def raw_data= data
+      if data.size == size
+        @image.imagedata[@offset, size] = data
+      else
+        raise Exception, "raw data size must be #{size}, got #{data.size}"
+      end
+    end
+
+    # set raw byte data at specified offset
+    # modifies @image, resets @decoded_bytes
+    def raw_set offset, value
+      @decoded_bytes = nil
+      value = value.ord if value.is_a?(String)
+      if offset == 0
+        @filter = value # XXX possible bugs with Singleton Modules
+      end
+      @image.imagedata.setbyte(@offset+offset, value)
     end
 
     private
