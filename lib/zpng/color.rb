@@ -14,7 +14,7 @@ module ZPNG
       @depth       = h[:depth]       || 8
 
       # default ALPHA = 0xff - opaque
-      @a ||= h[:alpha] || (2**@depth-1)
+      @a ||= h[:alpha] || h[:a] || (2**@depth-1)
     end
 
     def a= a
@@ -88,12 +88,30 @@ module ZPNG
       [to_grayscale, alpha]
     end
 
-    # from_grayscale level
-    # from_grayscale level,        :depth => 16
-    # from_grayscale level, alpha
-    # from_grayscale level, alpha, :depth => 16
-    def self.from_grayscale value, *args
-      Color.new value,value,value, *args
+    class << self
+      # from_grayscale level
+      # from_grayscale level,        :depth => 16
+      # from_grayscale level, alpha
+      # from_grayscale level, alpha, :depth => 16
+      def from_grayscale value, *args
+        Color.new value,value,value, *args
+      end
+
+      # value: (String) "#ff00ff", "#f0f", "f0f", "eebbcc"
+      # alpha can be set via :alpha => N optional hash argument
+      def from_html value, *args
+        s = value.tr('#','')
+        case s.size
+        when 3
+          r,g,b = s.split('').map{ |x| x.to_i(16)*17 }
+        when 6
+          r,g,b = s.scan(/../).map{ |x| x.to_i(16) }
+        else
+          raise ArgumentError, "invalid HTML color #{s}"
+        end
+        Color.new r,g,b, *args
+      end
+      alias :from_css :from_html
     end
 
     ########################################################
@@ -196,6 +214,43 @@ module ZPNG
         end
       r = c1.to_grayscale <=> c2.to_grayscale
       r == 0 ? (c1.to_a <=> c2.to_a) : r
+    end
+
+    # subtract other color from this one, returns new Color
+    def - c
+      op :-, c
+    end
+
+    # add other color to this one, returns new Color
+    def + c
+      op :+, c
+    end
+
+    # XOR this color with other one, returns new Color
+    def ^ c
+      op :^, c
+    end
+
+    # Op! op! op! Op!! Oppan Gangnam Style!!
+    def op op, c=nil
+      # XXX what to do with alpha?
+      max = 2**depth-1
+      if c
+        c = c.to_depth(depth)
+        Color.new(
+          @r.send(op, c.r) & max,
+          @g.send(op, c.g) & max,
+          @b.send(op, c.b) & max,
+          :depth => self.depth
+        )
+      else
+        Color.new(
+          @r.send(op) & max,
+          @g.send(op) & max,
+          @b.send(op) & max,
+          :depth => self.depth
+        )
+      end
     end
 
     # for Array.uniq()
