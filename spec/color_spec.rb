@@ -47,4 +47,29 @@ describe ZPNG::Color do
     [c3,c2,c1].sort.should == [c1,c2,c3]
     [c1,c3,c2].sort.should == [c1,c2,c3]
   end
+
+  describe "#from_html" do
+    it "should understand short notation" do
+      ZPNG::Color.from_html('#ff1133').should == ZPNG::Color.new(0xff,0x11,0x33)
+    end
+    it "should understand long notation" do
+      ZPNG::Color.from_html('#f13').should == ZPNG::Color.new(0xff,0x11,0x33)
+    end
+    it "should understand short notation w/o '#'" do
+      ZPNG::Color.from_html('ff1133').should == ZPNG::Color.new(0xff,0x11,0x33)
+    end
+    it "should understand long notation w/o '#'" do
+      ZPNG::Color.from_html('f13').should == ZPNG::Color.new(0xff,0x11,0x33)
+    end
+    it "should set alpha" do
+      ZPNG::Color.from_html('f13', :alpha => 0x11).should ==
+        ZPNG::Color.new(0xff,0x11,0x33, 0x11)
+
+      ZPNG::Color.from_html('#f13', :a => 0x44).should ==
+        ZPNG::Color.new(0xff,0x11,0x33, 0x44)
+
+      ZPNG::Color.from_html('f13').should_not ==
+        ZPNG::Color.new(0xff,0x11,0x33, 0x11)
+    end
+  end
 end
