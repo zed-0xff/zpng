@@ -10,6 +10,23 @@ module ZPNG
           end
         end
       end
+
+      def keep_if otherwise = Color::TRANSPARENT
+        @image.height.times do |y|
+          @image.width.times do |x|
+            @image[x,y] = otherwise unless yield(@image[x,y])
+          end
+        end
+      end
+
+      def filter!
+        @image.height.times do |y|
+          @image.width.times do |x|
+            @image[x,y] = yield(@image[x,y])
+          end
+        end
+      end
+      alias :map! :filter!
     end
 
     module ScanLineEnum
