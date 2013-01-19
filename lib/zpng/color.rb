@@ -231,6 +231,16 @@ module ZPNG
       op :^, c
     end
 
+    # AND this color with other one, returns new Color
+    def & c
+      op :&, c
+    end
+
+    # OR this color with other one, returns new Color
+    def | c
+      op :|, c
+    end
+
     # Op! op! op! Op!! Oppan Gangnam Style!!
     def op op, c=nil
       # XXX what to do with alpha?
