@@ -191,9 +191,14 @@ module ZPNG
     end
 
     def chunks idx=nil
+      max_type_len = 0
+      unless idx
+        max_type_len = @img.chunks.map{ |x| x.type.to_s.size }.max
+      end
+
       @img.chunks.each do |chunk|
         next if idx && chunk.idx != idx
-        colored_type = chunk.type.magenta
+        colored_type = chunk.type.ljust(max_type_len).magenta
         colored_crc =
           if chunk.crc == :no_crc # hack for BMP chunks (they have no CRC)
             ''
@@ -259,8 +264,14 @@ module ZPNG
     def palette
       if @img.palette
         pp @img.palette
-        hexdump(@img.palette.data, :width => 3, :show_offset => false) do |row, offset|
-          row.insert(0,"  color %4s:  " % "##{(offset/3)}")
+        if @img.format == :bmp
+          hexdump(@img.palette.data, :width => 4, :show_offset => false) do |row, offset|
+            row.insert(0,"  color %4s:  " % "##{(offset/4)}")
+          end
+        else
+          hexdump(@img.palette.data, :width => 3, :show_offset => false) do |row, offset|
+            row.insert(0,"  color %4s:  " % "##{(offset/3)}")
+          end
         end
       end
     end

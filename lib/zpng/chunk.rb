@@ -210,6 +210,25 @@ module ZPNG
         @data.to_s.size/3
       end
 
+      # colors enumerator
+      def each
+        ncolors.times do |i|
+          yield self[i]
+        end
+      end
+
+      # colors enumerator with index
+      def each_with_index
+        ncolors.times do |i|
+          yield self[i], i
+        end
+      end
+
+      # convert to array of colors
+      def to_a
+        ncolors.times.map{ |i| self[i] }
+      end
+
       def index color
         ncolors.times do |i|
           c = self[i]
