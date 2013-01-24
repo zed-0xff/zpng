@@ -22,6 +22,7 @@ module ZPNG
     #   Hash    of image parameters to create new blank image
     def initialize x, h={}
       @chunks = []
+      @extradata = []
       @color_class = Color
       @format = :png
       @verbose =
@@ -135,8 +136,8 @@ module ZPNG
 
       unless io.eof?
         offset     = io.tell
-        @extradata = io.read
-        puts "[?] #{@extradata.size} bytes of extra data after image end (IEND), offset = 0x#{offset.to_s(16)}".red if @verbose >= 1
+        @extradata << io.read
+        puts "[?] #{@extradata.last.size} bytes of extra data after image end (IEND), offset = 0x#{offset.to_s(16)}".red if @verbose >= 1
       end
     end
 
@@ -247,6 +248,10 @@ module ZPNG
       begin
         # save some memory by not using String#[] when not necessary
         r << zi.inflate(pos==0 ? data : data[pos..-1])
+        if zi.total_in < data.size
+          @extradata << data[zi.total_in..-1]
+          puts "[?] #{@extradata.last.size} bytes of extra data after zlib stream".red if @verbose >= 1
+        end
         # decompress OK
       rescue Zlib::BufError
         # tried to decompress, but got EOF - need more data
@@ -285,7 +290,6 @@ module ZPNG
         begin
           puts "[?] no image header, assuming non-interlaced RGB".yellow unless header
           data = _imagedata
-          #check_zlib_extradata data
           (data && data.size > 0) ? _safe_inflate(data) : ''
         end
     end
@@ -297,21 +301,6 @@ module ZPNG
         imagedata.size
       end
     end
-
-#    # check for extradata in zlib datastream after the end of compressed stream
-#    def check_zlib_extradata data
-#      zi = Zlib::Inflate.new(Zlib::MAX_WBITS)
-#      io = StringIO.new(data)
-#      while !io.eof? && !zi.finished?
-#        zi.inflate(io.read(16384))
-#      end
-#      zi.finish unless zi.finished?
-#      if data.size != zi.total_in
-#        p [data.size, zi.total_in, zi.total_out]
-#        raise
-#      end
-#      zi.close if zi && !zi.closed?
-#    end
 
 #    # try to get imagedata size in bytes, w/o storing entire decompressed
 #    # stream in memory. used in bin/zpng
@@ -409,22 +398,30 @@ module ZPNG
       # allow :zlib_level => nil
       options[:zlib_level] = 9 unless options.key?(:zlib_level)
 
-      # XXX creating new IDAT must be BEFORE deleting old IDAT chunks
-      idat = Chunk::IDAT.new(
-        :data => Zlib::Deflate.deflate(scanlines.map(&:export).join, options[:zlib_level])
-      )
+      if options.fetch(:repack, true)
+        data = Zlib::Deflate.deflate(scanlines.map(&:export).join, options[:zlib_level])
 
-      # delete old IDAT chunks
-      @chunks.delete_if{ |c| c.is_a?(Chunk::IDAT) }
+        idats = @chunks.find_all{ |c| c.is_a?(Chunk::IDAT) }
+        case idats.size
+        when 0
+          # add new IDAT
+          @chunks << Chunk::IDAT.new( :data => data )
+        when 1
+          idats[0].data = data
+        else
+          idats[0].data = data
+          # delete other IDAT chunks
+          @chunks -= idats[1..-1]
+        end
+      end
 
-      # add newly created IDAT
-      @chunks << idat
+      unless @chunks.last.is_a?(Chunk::IEND)
+        # delete old IEND chunk(s) b/c IEND must be the last one
+        @chunks.delete_if{ |c| c.is_a?(Chunk::IEND) }
 
-      # delete IEND chunk(s) b/c we just added a new chunk and IEND must be the last one
-      @chunks.delete_if{ |c| c.is_a?(Chunk::IEND) }
-
-      # add fresh new IEND
-      @chunks << Chunk::IEND.new
+        # add fresh new IEND
+        @chunks << Chunk::IEND.new
+      end
 
       PNG_HDR + @chunks.map(&:export).join
     end
