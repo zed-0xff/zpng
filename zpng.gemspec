@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "zpng"
-  s.version = "0.2.2"
+  s.version = "0.2.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2013-01-13"
+  s.date = "2013-01-24"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["zpng"]
   s.extra_rdoc_files = [
@@ -49,6 +49,8 @@ Gem::Specification.new do |s|
     "lib/zpng/text_chunk.rb",
     "misc/chars.png",
     "misc/gen_ascii_map.rb",
+    "samples/bad/000000.png",
+    "samples/bad/b1.png",
     "samples/captcha_4bpp.png",
     "samples/cats.png",
     "samples/itxt.png",
@@ -68,6 +70,7 @@ Gem::Specification.new do |s|
     "spec/adam7_spec.rb",
     "spec/alpha_spec.rb",
     "spec/ascii_spec.rb",
+    "spec/bad_samples_spec.rb",
     "spec/bmp_spec.rb",
     "spec/cli_spec.rb",
     "spec/color_spec.rb",
