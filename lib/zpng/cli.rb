@@ -56,6 +56,10 @@ module ZPNG
         opts.on "-A", '--ascii', 'Try to convert image to ASCII (works best with monochrome images)' do
           @actions << :ascii
         end
+        opts.on '--ascii-string STRING', 'Use specific string to map pixels to ASCII characters' do |x|
+          @options[:ascii_string] = x
+          @actions << :ascii
+        end
         opts.on "-N", '--ansi', 'Try to display image as ANSI colored text' do
           @actions << :ansi
         end
@@ -216,7 +220,7 @@ module ZPNG
     def ascii
       @img.height.times do |y|
         @img.width.times do |x|
-          c = @img[x,y].to_ascii
+          c = @img[x,y].to_ascii *[@options[:ascii_string]].compact
           c *= 2 if @options[:wide]
           print c
         end
