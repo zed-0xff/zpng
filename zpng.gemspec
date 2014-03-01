@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "zpng"
-  s.version = "0.2.4"
+  s.version = "0.2.5"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andrey \"Zed\" Zaikin"]
-  s.date = "2013-11-14"
+  s.date = "2014-03-01"
   s.email = "zed.0xff@gmail.com"
   s.executables = ["zpng"]
   s.extra_rdoc_files = [
