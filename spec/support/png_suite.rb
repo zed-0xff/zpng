@@ -19,9 +19,10 @@ module PNGSuite
       data = open(PNG_SUITE_URL).read
 
       fname = File.join(dir, "png_suite.tgz")
-      File.open(fname, "wb"){ |f| f<<data }
+      File.binwrite fname, data
       puts "[.] unpacking .. "
-      system "tar", "xzf", fname, "-C", dir
+      system "tar", "xf", fname, "-C", dir
+      raise "cannot unpack #{fname}" unless $?.success?
     end
 
     def each *prefixes
