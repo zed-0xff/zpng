@@ -1,4 +1,4 @@
-require 'rainbow'
+require 'rainbow/ext/string'
 
 class String
   [:black, :red, :green, :yellow, :blue, :magenta, :cyan, :white].each do |color|
