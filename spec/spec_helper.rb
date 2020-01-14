@@ -1,6 +1,7 @@
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'rspec'
+require 'rspec/its'
 require 'zpng'
 
 # Requires supporting files with custom matchers and macros, etc,
@@ -33,6 +34,7 @@ end
 PNGSuite.init( File.join(SAMPLES_DIR, "png_suite") )
 
 RSpec.configure do |config|
+  config.expect_with(:rspec) { |c| c.syntax = :should }
   config.before :suite do
   end
 end

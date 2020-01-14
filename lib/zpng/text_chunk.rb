@@ -2,13 +2,19 @@ module ZPNG
   class TextChunk < Chunk
     attr_accessor :keyword, :text
 
+    if RUBY_VERSION > "2.4"
+      INTEGER_CLASS = Integer
+    else
+      INTEGER_CLASS = Fixnum
+    end
+
     def inspect verbosity = 10
       vars = %w'keyword text language translated_keyword cmethod cflag'
       vars -= %w'text translated_keyword' if verbosity <=0
       super.sub(/ *>$/,'') + ", " +
         vars.map do |var|
           t = instance_variable_get("@#{var}")
-          unless t.is_a?(Fixnum)
+          unless t.is_a?(INTEGER_CLASS)
             t = t.to_s
             t = t[0..20] + "..." if t.size > 20
           end

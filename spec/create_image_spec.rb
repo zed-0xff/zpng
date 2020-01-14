@@ -33,7 +33,7 @@ describe Image do
 
   describe "new( :bpp => 16, :color => true )" do
     subject{ lambda{ _new_img(16,true) } }
-    it { should raise_exception }
+    it { should raise_exception(RuntimeError) }
   end
 
   describe "new( :bpp => 24, :color => false )" do
