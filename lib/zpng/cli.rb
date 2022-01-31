@@ -52,6 +52,10 @@ module ZPNG
           @actions << [:crop, x]
         end
 
+        opts.on "-R", "--rebuild NEW_FILENAME", "rebuild image, useful in restoring borked images" do |x|
+          @actions << [:rebuild, x]
+        end
+
         opts.separator ""
         opts.on "-A", '--ascii', 'Try to convert image to ASCII (works best with monochrome images)' do
           @actions << :ascii
@@ -135,6 +139,10 @@ module ZPNG
       end
       @img.crop! :width => $1.to_i, :height => $2.to_i, :x => $3.to_i, :y => $4.to_i
       print @img.export unless @actions.include?(:ascii)
+    end
+
+    def rebuild fname
+      File.binwrite(fname, @img.export)
     end
 
     def load_file fname

@@ -1,6 +1,9 @@
 module ZPNG
   class Chunk
-    attr_accessor :size, :type, :data, :crc, :idx
+    attr_accessor :size, :type, :data, :crc, :idx, :offset
+
+    KNOWN_TYPES = %w'IHDR PLTE IDAT IEND cHRM gAMA iCCP sBIT sRGB bKGD hIST tRNS pHYs sPLT tIME iTXt tEXt zTXt'
+    VALID_SIZE_RANGE = 0..((2**31)-1)
 
     include DeepCopyable
 
@@ -23,12 +26,13 @@ module ZPNG
     def initialize x = {}
       if x.respond_to?(:read)
         # IO
+        @offset = x.tell
         @size, @type = x.read(8).unpack('Na4')
         begin
           @data = x.read(size)
         rescue Errno::EINVAL
           # TODO: show warning?
-          @data = x.read if size > 2**31
+          @data = x.read if size > VALID_SIZE_RANGE.end
         end
         @crc         = x.read(4).to_s.unpack('N').first
       elsif x.respond_to?(:[])
@@ -70,6 +74,22 @@ module ZPNG
       expected_crc = Zlib.crc32(data, Zlib.crc32(type))
       expected_crc == crc
     end
+
+    def check checks = {type: true, crc: true, size: true}
+      checks.each do |check_type, check_mode|
+        case check_type
+        when :type
+          return false if check_mode != KNOWN_TYPES.include?(self.type)
+        when :crc
+          return false if check_mode != crc_ok?
+        when :size
+          return false if check_mode != VALID_SIZE_RANGE.include?(self.size)
+        end
+      end
+      true
+    end
+
+    def valid?; check; end
 
     def fix_crc!
       @crc = Zlib.crc32(data, Zlib.crc32(type))

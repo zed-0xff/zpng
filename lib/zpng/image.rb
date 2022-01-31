@@ -108,11 +108,43 @@ module ZPNG
       end
     end
 
+    HEUR_CHUNK_SIZE_RANGE = -16..16
+
+    # assume previous chunk size is not right, try to iterate over neighbour data
+    def _apply_heuristics io, prev_chunk, chunk
+      prev_pos = io.tell
+      HEUR_CHUNK_SIZE_RANGE.each do |delta|
+        next if delta == 0
+        next if prev_chunk.data.size + delta < 0
+        io.seek(chunk.offset+delta, IO::SEEK_SET)
+        potential_chunk = Chunk.new(io)
+        if potential_chunk.valid?
+          STDERR.puts "[!] found invalid chunk at offset #{chunk.offset}, but valid one at #{chunk.offset+delta}. using latter".red
+          if delta > 0
+            io.seek(chunk.offset, IO::SEEK_SET)
+            data = io.read(delta)
+            STDERR.puts "[!] #{delta} extra bytes of data: #{data.inspect}".red
+          else
+            io.seek(chunk.offset+delta, IO::SEEK_SET)
+          end
+          return true
+        end
+      end
+      false
+    end
+
     def _read_png io
+      prev_chunk = nil
       while !io.eof?
         chunk = Chunk.from_stream(io)
+        # heuristics
+        if prev_chunk && prev_chunk.check(type: true, crc: false) &&
+            chunk.check(type: false, crc: false) && chunk.data
+          redo if _apply_heuristics(io, prev_chunk, chunk)
+        end
         chunk.idx = @chunks.size
         @chunks << chunk
+        prev_chunk = chunk
         break if chunk.is_a?(Chunk::IEND)
       end
     end
@@ -137,7 +169,7 @@ module ZPNG
       unless io.eof?
         offset     = io.tell
         @extradata << io.read
-        puts "[?] #{@extradata.last.size} bytes of extra data after image end (IEND), offset = 0x#{offset.to_s(16)}".red if @verbose >= 1
+        STDERR.puts "[?] #{@extradata.last.size} bytes of extra data after image end (IEND), offset = 0x#{offset.to_s(16)}".red if @verbose >= 1
       end
     end
 
@@ -250,16 +282,16 @@ module ZPNG
         r << zi.inflate(pos==0 ? data : data[pos..-1])
         if zi.total_in < data.size
           @extradata << data[zi.total_in..-1]
-          puts "[?] #{@extradata.last.size} bytes of extra data after zlib stream".red if @verbose >= 1
+          STDERR.puts "[?] #{@extradata.last.size} bytes of extra data after zlib stream".red if @verbose >= 1
         end
         # decompress OK
       rescue Zlib::BufError
         # tried to decompress, but got EOF - need more data
-        puts "[!] #{$!.inspect}".red if @verbose >= -1
+        STDERR.puts "[!] #{$!.inspect}".red if @verbose >= -1
         # collect any remaining data in decompress buffer
         r << zi.flush_next_out
       rescue Zlib::DataError
-        puts "[!] #{$!.inspect}".red if @verbose >= -1
+        STDERR.puts "[!] #{$!.inspect}".red if @verbose >= -1
         #p [pos, zi.total_in, zi.total_out, data.size, r.size]
         r << zi.flush_next_out
         # XXX TODO try to skip error and continue
@@ -273,7 +305,7 @@ module ZPNG
 #        pos = 0
 #        retry if pos < data.size
       rescue Zlib::NeedDict
-        puts "[!] #{$!.inspect}".red if @verbose >= -1
+        STDERR.puts "[!] #{$!.inspect}".red if @verbose >= -1
         # collect any remaining data in decompress buffer
         r << zi.flush_next_out
       end
@@ -288,7 +320,7 @@ module ZPNG
     def imagedata
       @imagedata ||=
         begin
-          puts "[?] no image header, assuming non-interlaced RGB".yellow unless header
+          STDERR.puts "[?] no image header, assuming non-interlaced RGB".yellow unless header
           data = _imagedata
           (data && data.size > 0) ? _safe_inflate(data) : ''
         end
