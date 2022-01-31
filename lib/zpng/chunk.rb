@@ -10,21 +10,26 @@ module ZPNG
       begin
         if const_defined?(type.upcase)
           klass = const_get(type.upcase)
-          klass.new(io)
-        else
-          Chunk.new(io)
+          return klass.new(io)
         end
       rescue NameError
         # invalid chunk type?
-        Chunk.new(io)
       end
+      # putting this out of rescue makes better non-confusing exception messages
+      # if exception occurs somewhere in Chunk.new
+      Chunk.new(io)
     end
 
     def initialize x = {}
       if x.respond_to?(:read)
         # IO
         @size, @type = x.read(8).unpack('Na4')
-        @data        = x.read(size)
+        begin
+          @data = x.read(size)
+        rescue Errno::EINVAL
+          # TODO: show warning?
+          @data = x.read if size > 2**31
+        end
         @crc         = x.read(4).to_s.unpack('N').first
       elsif x.respond_to?(:[])
         # Hash
