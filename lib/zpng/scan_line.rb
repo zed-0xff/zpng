@@ -295,7 +295,6 @@ module ZPNG
           else
             STDERR.puts "[!] #{self.class}: ##@idx: invalid filter #@filter, assuming FILTER_NONE".red
             s = raw
-            raise
           end
 
           s
