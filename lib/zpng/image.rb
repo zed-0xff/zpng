@@ -119,7 +119,7 @@ module ZPNG
         io.seek(chunk.offset+delta, IO::SEEK_SET)
         potential_chunk = Chunk.new(io)
         if potential_chunk.valid?
-          STDERR.puts "[!] found invalid chunk at offset #{chunk.offset}, but valid one at #{chunk.offset+delta}. using latter".red
+          STDERR.puts "[!] heuristics: found invalid chunk at offset #{chunk.offset}, but valid one at #{chunk.offset+delta}. using latter".red
           if delta > 0
             io.seek(chunk.offset, IO::SEEK_SET)
             data = io.read(delta)

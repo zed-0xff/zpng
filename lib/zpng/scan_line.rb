@@ -7,7 +7,7 @@ module ZPNG
     FILTER_AVERAGE        = 3
     FILTER_PAETH          = 4
 
-    VALID_FILTERS = [ FILTER_NONE, FILTER_SUB, FILTER_UP, FILTER_AVERAGE, FILTER_PAETH ]
+    VALID_FILTERS = FILTER_NONE..FILTER_PAETH
 
     attr_accessor :image, :idx, :filter, :offset, :bpp
     attr_writer :decoded_bytes
@@ -35,10 +35,6 @@ module ZPNG
           end
         if @filter = image.imagedata[@offset]
           @filter = @filter.ord
-          unless VALID_FILTERS.include?(@filter)
-            STDERR.puts "[!] #{self.class}: ##@idx: invalid filter #@filter, assuming FILTER_NONE".red
-            @filter = FILTER_NONE
-          end
         elsif @image.verbose >= -1
           STDERR.puts "[!] #{self.class}: ##@idx: no data at pos 0, scanline dropped".red
         end
@@ -48,6 +44,10 @@ module ZPNG
     # ScanLine is BAD if it has no filter
     def bad?
       !@filter
+    end
+
+    def valid_filter?
+      VALID_FILTERS.include?(@filter)
     end
 
     # total scanline size in bytes, INCLUDING leading 'filter' byte
@@ -292,7 +292,10 @@ module ZPNG
               )
             end
 
-          else raise "invalid ScanLine filter #{@filter}"
+          else
+            STDERR.puts "[!] #{self.class}: ##@idx: invalid filter #@filter, assuming FILTER_NONE".red
+            s = raw
+            raise
           end
 
           s

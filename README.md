@@ -36,8 +36,10 @@ Usage
     
         -C, --crop GEOMETRY              crop image, {WIDTH}x{HEIGHT}+{X}+{Y},
                                          puts results on stdout unless --ascii given
+        -R, --rebuild NEW_FILENAME       rebuild image, useful in restoring borked images
     
         -A, --ascii                      Try to convert image to ASCII (works best with monochrome images)
+            --ascii-string STRING        Use specific string to map pixels to ASCII characters
         -N, --ansi                       Try to display image as ANSI colored text
         -2, --256                        Try to display image as 256-colored text
         -W, --wide                       Use 2 horizontal characters per one pixel
@@ -52,7 +54,7 @@ Usage
 
     [.] image size 35x35, 24bpp, COLOR_RGB
     [.] uncompressed imagedata size = 3710 bytes
-    [.] <Chunk #00 IHDR size=    13, crc=91bb240e, color=2, compression=0, depth=8, filter=0, height=35, interlace=0, width=35> CRC OK
+    [.] <Chunk #00 IHDR size=    13, crc=91bb240e, color=2, compression=0, depth=8, filter=0, height=35, interlace=0, offset=8, width=35> CRC OK
     [.] <Chunk #01 sRGB size=     1, crc=aece1ce9 > CRC OK
     [.] <Chunk #02 IDAT size=   399, crc=59790716 > CRC OK
     [.] <Chunk #03 IEND size=     0, crc=ae426082 > CRC OK
@@ -66,7 +68,7 @@ Usage
         01 ff ff ff 00 00 00 00  00 00 00 00 00 00 00 00  |................|
         00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................| + 3678 bytes
     
-    [.] <Chunk #00 IHDR size=    13, crc=91bb240e, color=2, compression=0, depth=8, filter=0, height=35, idx=0, interlace=0, width=35> CRC OK
+    [.] <Chunk #00 IHDR size=    13, crc=91bb240e, color=2, compression=0, depth=8, filter=0, height=35, idx=0, interlace=0, offset=8, width=35> CRC OK
         00 00 00 23 00 00 00 23  08 02 00 00 00           |...#...#.....   |
     
     [.] <Chunk #01 sRGB size=     1, crc=aece1ce9 > CRC OK
@@ -84,7 +86,7 @@ Usage
 
     # zpng --chunks qr_aux_chunks.png
 
-    [.] <Chunk #00 IHDR size=    13, crc=36a28ef4, color=0, compression=0, depth=1, filter=0, height=35, interlace=0, width=35> CRC OK
+    [.] <Chunk #00 IHDR size=    13, crc=36a28ef4, color=0, compression=0, depth=1, filter=0, height=35, interlace=0, offset=8, width=35> CRC OK
     [.] <Chunk #01 gAMA size=     4, crc=0bfc6105 > CRC OK
     [.] <Chunk #02 sRGB size=     1, crc=aece1ce9 > CRC OK
     [.] <Chunk #03 cHRM size=    32, crc=9cba513c > CRC OK
