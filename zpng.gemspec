@@ -103,19 +103,15 @@ Gem::Specification.new do |s|
   end
 
   if s.respond_to? :add_runtime_dependency then
-    s.add_runtime_dependency(%q<rainbow>.freeze, [">= 0"])
-    s.add_development_dependency(%q<rspec>.freeze, [">= 0"])
-    s.add_development_dependency(%q<rspec-its>.freeze, [">= 0"])
-    s.add_development_dependency(%q<bundler>.freeze, [">= 0"])
-    s.add_development_dependency(%q<juwelier>.freeze, [">= 0"])
-    s.add_development_dependency(%q<what_methods>.freeze, [">= 0"])
+    s.add_runtime_dependency(%q<rainbow>.freeze, ["~> 3.1.1"])
+    s.add_development_dependency(%q<rspec>.freeze, ["~> 3.11.0"])
+    s.add_development_dependency(%q<rspec-its>.freeze, ["~> 1.3.0"])
+    s.add_development_dependency(%q<juwelier>.freeze, ["~> 2.4.9"])
   else
-    s.add_dependency(%q<rainbow>.freeze, [">= 0"])
-    s.add_dependency(%q<rspec>.freeze, [">= 0"])
-    s.add_dependency(%q<rspec-its>.freeze, [">= 0"])
-    s.add_dependency(%q<bundler>.freeze, [">= 0"])
-    s.add_dependency(%q<juwelier>.freeze, [">= 0"])
-    s.add_dependency(%q<what_methods>.freeze, [">= 0"])
+    s.add_dependency(%q<rainbow>.freeze, ["~> 3.1.1"])
+    s.add_dependency(%q<rspec>.freeze, ["~> 3.11.0"])
+    s.add_dependency(%q<rspec-its>.freeze, ["~> 1.3.0"])
+    s.add_dependency(%q<juwelier>.freeze, ["~> 2.4.9"])
   end
 end
 
