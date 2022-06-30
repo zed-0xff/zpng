@@ -32,8 +32,9 @@ describe Image do
   end
 
   describe "new( :bpp => 16, :color => true )" do
-    subject{ lambda{ _new_img(16,true) } }
-    it { should raise_exception(RuntimeError) }
+    it "raises error" do
+      lambda { _new_img(16,true) }.should raise_error(RuntimeError)
+    end
   end
 
   describe "new( :bpp => 24, :color => false )" do
