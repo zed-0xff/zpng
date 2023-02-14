@@ -23,6 +23,7 @@ Juwelier::Tasks.new do |gem|
   gem.authors = ["Andrey \"Zed\" Zaikin"]
   gem.executables = %w'zpng'
   gem.files.include "lib/**/*.rb"
+  gem.files.exclude "samples/**/*"
   # dependencies defined in Gemfile
 end
 Juwelier::RubygemsDotOrgTasks.new
