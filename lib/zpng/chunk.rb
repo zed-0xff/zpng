@@ -51,10 +51,10 @@ module ZPNG
       end
     end
 
-    def export
+    def export( fix_crc: true )
       @data = self.export_data # virtual
       @size = @data.size # XXX hmm.. is it always is?
-      fix_crc!
+      fix_crc! if fix_crc
       [@size,@type].pack('Na4') + @data + [@crc].pack('N')
     end
 
