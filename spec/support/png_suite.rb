@@ -1,5 +1,5 @@
 module PNGSuite
-  PNG_SUITE_URL = "http://www.schaik.com/pngsuite/PngSuite-2011apr25.tgz"
+  PNG_SUITE_URL = "http://www.schaik.com/pngsuite/PngSuite-2017jul19.tgz"
 
   class << self
     attr_accessor :dir
