@@ -173,7 +173,7 @@ module ZPNG
           @filter      ||= 0
           @interlace   ||= 0
 
-          unless ALLOWED_DEPTHS[@color].include?(@depth)
+          unless ALLOWED_DEPTHS[@color]&.include?(@depth)
             raise "[!] invalid color mode (#{@color.inspect}) / bit depth (#{@depth.inspect}) combination"
           end
         end
@@ -190,7 +190,8 @@ module ZPNG
 
       # bits per pixel
       def bpp
-        SAMPLES_PER_COLOR[@color] * depth
+        spc = SAMPLES_PER_COLOR[@color]
+        spc ? spc * depth : nil
       end
 
       def color_used?

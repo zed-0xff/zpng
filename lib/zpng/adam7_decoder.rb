@@ -1,19 +1,20 @@
 module ZPNG
   class Adam7Decoder
-    attr_accessor :image
+    attr_accessor :bpp
     attr_reader :scanlines_count
 
     # http://en.wikipedia.org/wiki/Adam7_algorithm#Passes
-    def initialize img
-      @image = img
+    def initialize width, height, bpp
+      @bpp = bpp
+      raise "Invalid BPP #{@bpp.inspect}" if @bpp.to_i == 0
       @widths = [
-        [(img.width/8.0).ceil]     * (img.height/8.0).ceil,     # pass1
-        [((img.width-4)/8.0).ceil] * (img.height/8.0).ceil,     # pass2
-        [(img.width/4.0).ceil]     * ((img.height-4)/8.0).ceil, # pass3
-        [((img.width-2)/4.0).ceil] * (img.height/4.0).ceil,     # pass4
-        [(img.width/2.0).ceil]     * ((img.height-2)/4.0).ceil, # pass5
-        [((img.width-1)/2.0).ceil] * (img.height/2.0).ceil,     # pass6
-        [img.width]                * ((img.height-1)/2.0).ceil  # pass7
+        [(width/8.0).ceil]     * (height/8.0).ceil,     # pass1
+        [((width-4)/8.0).ceil] * (height/8.0).ceil,     # pass2
+        [(width/4.0).ceil]     * ((height-4)/8.0).ceil, # pass3
+        [((width-2)/4.0).ceil] * (height/4.0).ceil,     # pass4
+        [(width/2.0).ceil]     * ((height-2)/4.0).ceil, # pass5
+        [((width-1)/2.0).ceil] * (height/2.0).ceil,     # pass6
+        [width]                * ((height-1)/2.0).ceil  # pass7
       ].map{ |x| x == [0] ? [] : x }
       @scanlines_count = 0
       # two leading zeroes added specially for convert_coords() code readability
@@ -28,7 +29,7 @@ module ZPNG
 
     # scanline size in bytes, INCLUDING leading filter byte
     def scanline_size idx
-      (scanline_width(idx) * image.bpp / 8.0).ceil + 1
+      (scanline_width(idx) * bpp / 8.0).ceil + 1
     end
 
     # scanline offset in imagedata

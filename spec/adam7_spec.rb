@@ -13,9 +13,7 @@ describe ZPNG::Adam7Decoder do
     }.each do |dims, slw|
       it "should be right for #{dims} image" do
         w,h = dims.split('x').map(&:to_i)
-        img = Object.new
-        allow(img).to receive_messages(:width => w, :height => h)
-        adam7 = ZPNG::Adam7Decoder.new(img)
+        adam7 = ZPNG::Adam7Decoder.new(w, h, 8)
         slw.size.times.map{ |i| adam7.scanline_width(i) }.should == slw
       end
     end
@@ -34,9 +32,7 @@ describe ZPNG::Adam7Decoder do
     }.each do |dims, n|
       it "should be right for #{dims} image" do
         w,h = dims.split('x').map(&:to_i)
-        img = Object.new
-        allow(img).to receive_messages(:width => w, :height => h)
-        adam7 = ZPNG::Adam7Decoder.new(img)
+        adam7 = ZPNG::Adam7Decoder.new(w, h, 8)
         adam7.scanlines_count.should == n
       end
     end
@@ -54,9 +50,7 @@ describe ZPNG::Adam7Decoder do
     }.each do |dims, pst|
       it "should be right for #{dims} image" do
         w,h = dims.split('x').map(&:to_i)
-        img = Object.new
-        allow(img).to receive_messages(:width => w, :height => h)
-        adam7 = ZPNG::Adam7Decoder.new(img)
+        adam7 = ZPNG::Adam7Decoder.new(w, h, 8)
         adam7.instance_variable_get("@pass_starts").should == pst
       end
     end

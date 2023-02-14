@@ -179,13 +179,15 @@ module ZPNG
       color = %w'COLOR_GRAYSCALE COLOR_RGB COLOR_INDEXED COLOR_GRAY_ALPHA COLOR_RGBA'.find do |k|
         @img.hdr.color == ZPNG.const_get(k)
       end
-      puts "[.] image size #{@img.width || '?'}x#{@img.height || '?'}, #{@img.bpp}bpp, #{color}"
+      puts "[.] image size #{@img.width || '?'}x#{@img.height || '?'}, #{@img.bpp || '?'}bpp, #{color}"
       puts "[.] palette = #{@img.palette}" if @img.palette
-      puts "[.] uncompressed imagedata size = #{@img.imagedata_size} bytes"
+      puts "[.] uncompressed imagedata size = #{@img.imagedata_size || '?'} bytes"
       _conditional_hexdump(@img.imagedata, 3) if @options[:verbose] > 0
     end
 
     def _conditional_hexdump data, v2 = 2
+      return unless data
+
       if @options[:verbose] <= 0
         # do nothing
       elsif @options[:verbose] < v2

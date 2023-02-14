@@ -15,6 +15,7 @@ each_sample("bad/*.png") do |fname|
     end
 
     it "should access 1st pixel" do
+      skip "no BPP" unless @img.bpp
       @img[0,0].should be_instance_of(ZPNG::Color)
     end
 
@@ -31,6 +32,7 @@ each_sample("bad/*.png") do |fname|
       end
 
       it "shows scanlines" do
+        skip "no BPP" unless @img.bpp
         orig_stdout, out = $stdout, ""
         begin
           $stdout = StringIO.new(out)
