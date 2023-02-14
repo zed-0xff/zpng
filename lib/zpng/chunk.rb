@@ -98,6 +98,9 @@ module ZPNG
     class IHDR < Chunk
       attr_accessor :width, :height, :depth, :color, :compression, :filter, :interlace
 
+      SIZE = 13
+      FORMAT = 'NNC5'
+
       PALETTE_USED = 1
       COLOR_USED   = 2
       ALPHA_USED   = 4
@@ -129,8 +132,6 @@ module ZPNG
         COLOR_GRAY_ALPHA => [          8, 16 ],
         COLOR_RGBA       => [          8, 16 ],
       }
-
-      FORMAT = 'NNC5'
 
       def initialize x
         super
@@ -276,8 +277,32 @@ module ZPNG
       alias :<< :find_or_add
     end
 
+    class CHRM < Chunk
+      SIZE = 32
+    end
+
+    class GAMA < Chunk
+      SIZE = 4
+    end
+
     class IDAT < Chunk; end
-    class IEND < Chunk; end
+
+    class TIME < Chunk
+      SIZE = 7
+    end
+
+    class IEND < Chunk
+      SIZE = 4
+    end
+
+    class PHYS < Chunk
+      SIZE = 9
+    end
+
+    class SRGB < Chunk
+      SIZE = 1
+    end
+
     class TRNS < Chunk; end
 
   end
