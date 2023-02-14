@@ -223,7 +223,11 @@ module ZPNG
           end
         puts "[.] #{chunk.inspect(@options[:verbose]).sub(chunk.type, colored_type)} #{colored_crc}"
 
-        _conditional_hexdump(chunk.data) unless chunk.size == 0
+        if @options[:verbose] >= 3
+          _conditional_hexdump(chunk.export)
+        else
+          _conditional_hexdump(chunk.data)
+        end
       end
     end
 
