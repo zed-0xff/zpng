@@ -508,11 +508,14 @@ module ZPNG
     end
 
     def each_pixel &block
-      height.times do |y|
-        width.times do |x|
-          yield(self[x,y], x, y)
+      e = Enumerator.new do |ee|
+        height.times do |y|
+          width.times do |x|
+            ee.yield(self[x,y], x, y)
+          end
         end
       end
+      block_given? ? e.each(&block) : e
     end
 
     # returns new deinterlaced image if deinterlaced

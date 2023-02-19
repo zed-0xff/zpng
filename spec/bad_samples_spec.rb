@@ -19,6 +19,18 @@ each_sample("bad/*.png") do |fname|
       @img[0,0].should be_instance_of(ZPNG::Color)
     end
 
+    it "accessess all pixels" do
+      skip "no BPP" unless @img.bpp
+      skip if fname == 'samples/bad/b1.png'
+      skip if fname == 'samples/bad/000000.png'
+      n = 0
+      @img.each_pixel do |px|
+        px.should be_instance_of(ZPNG::Color)
+        n += 1
+      end
+      n.should == @img.width*@img.height
+    end
+
     describe "CLI" do
       it "shows info & chunks" do
         orig_stdout, out = $stdout, ""

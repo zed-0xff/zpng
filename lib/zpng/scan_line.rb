@@ -1,4 +1,7 @@
 #coding: binary
+
+require 'set'
+
 module ZPNG
   class ScanLine
     FILTER_NONE           = 0
@@ -39,6 +42,7 @@ module ZPNG
           STDERR.puts "[!] #{self.class}: ##@idx: no data at pos 0, scanline dropped".red
         end
       end
+      @errors = Set.new
     end
 
     # ScanLine is BAD if it has no filter
@@ -146,6 +150,24 @@ module ZPNG
       end # case image.hdr.color
     end
 
+    def get_raw x
+      return nil if @bpp > 8 || image.hdr.color != COLOR_INDEXED
+
+      raw =
+        if @BPP
+          # 8, 16, 24, 32, 48 bits per pixel
+          decoded_bytes[x*@BPP, @BPP]
+        else
+          # 1, 2 or 4 bits per pixel
+          decoded_bytes[x*@bpp/8]
+        end
+
+      mask  = 2**@bpp-1
+      shift = 8-(x%(8/@bpp)+1)*@bpp
+      raise "invalid shift #{shift}" if shift < 0 || shift > 7
+      idx = (raw.ord >> shift) & mask
+    end
+
     def [] x
       raw =
         if @BPP
@@ -162,6 +184,20 @@ module ZPNG
         shift = 8-(x%(8/@bpp)+1)*@bpp
         raise "invalid shift #{shift}" if shift < 0 || shift > 7
         idx = (raw.ord >> shift) & mask
+        color = image.palette[idx]
+        unless color
+          if !@errors.include?(x) && @image.verbose >= -1
+            # prevent same error popping up multiple times, f.ex. in zsteg analysis
+            @errors << x
+            if (32..127).include?(idx)
+              msg = '[!] %s: color #%-3d ("%c") at x=%d y=%d is out of palette!'.red % [self.class, idx, idx, x, @idx]
+            else
+              msg = "[!] %s: color #%-3d at x=%d y=%d is out of palette!".red % [self.class, idx, x, @idx]
+            end
+            STDERR.puts msg
+          end
+          color = Color.new(0,0,0)
+        end
         if image.trns
           # transparency from tRNS chunk
           # For color type 3 (indexed color), the tRNS chunk contains a series of one-byte alpha values,
@@ -171,17 +207,14 @@ module ZPNG
           #   Alpha for palette index 1:  1 byte
           #   ...
           #
-          color = image.palette[idx].dup
           if color.alpha = image.trns.data[idx]
             # if it's not NULL - convert it from char to int,
             # otherwise it means fully opaque color, as well as NULL alpha in ZPNG::Color
+            color = color.dup
             color.alpha = color.alpha.ord
           end
-          return color
-        else
-          # no transparency
-          return image.palette[idx]
         end
+        return color
 
       when COLOR_GRAYSCALE              # ALLOWED_DEPTHS: 1, 2, 4, 8, 16
         c = if @bpp == 16
