@@ -22,4 +22,5 @@ require 'zpng/metadata'
 require 'zpng/pixels'
 
 require 'zpng/bmp/reader'
+require 'zpng/jpeg/reader'
 require 'zpng/image'

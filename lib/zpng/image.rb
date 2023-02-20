@@ -1,3 +1,4 @@
+# -*- coding:binary; frozen_string_literal: true -*-
 require 'stringio'
 
 module ZPNG
@@ -12,9 +13,9 @@ module ZPNG
     alias :dup   :deep_copy
 
     include BMP::Reader
+    include JPEG::Reader
 
-    PNG_HDR = "\x89PNG\x0d\x0a\x1a\x0a".force_encoding('binary')
-    BMP_HDR = "BM".force_encoding('binary')
+    PNG_HDR = "\x89PNG\x0d\x0a\x1a\x0a"
 
     # possible input params:
     #   IO      of opened image file
@@ -154,11 +155,13 @@ module ZPNG
       # Once a stream is in binary mode, it cannot be reset to nonbinary mode.
       io.binmode
 
-      hdr = io.read(BMP_HDR.size)
-      if hdr == BMP_HDR
+      hdr = io.read(BMP::MAGIC.size)
+      if hdr == BMP::MAGIC
         _read_bmp io
+      elsif hdr == JPEG::MAGIC
+        _read_jpeg io
       else
-        hdr << io.read(PNG_HDR.size - BMP_HDR.size)
+        hdr << io.read(PNG_HDR.size - BMP::MAGIC.size)
         if hdr == PNG_HDR
           _read_png io
         else
@@ -276,7 +279,7 @@ module ZPNG
     # on errors keep going and try to return maximum possible data
     def _safe_inflate data
       zi = Zlib::Inflate.new
-      pos = 0; r = ''
+      pos = 0; r = String.new
       begin
         # save some memory by not using String#[] when not necessary
         r << zi.inflate(pos==0 ? data : data[pos..-1])

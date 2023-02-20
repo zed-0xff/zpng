@@ -1,7 +1,10 @@
+# -*- coding:binary; frozen_string_literal: true -*-
 require 'iostruct'
 
 module ZPNG
   module BMP
+
+    MAGIC = "BM"
 
     class BITMAPFILEHEADER < IOStruct.new 'VvvV', #a2VvvV',
       #:bfType,
