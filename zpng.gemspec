@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib".freeze]
   s.authors = ["Andrey \"Zed\" Zaikin".freeze]
-  s.date = "2023-02-19"
+  s.date = "2023-02-20"
   s.email = "zed.0xff@gmail.com".freeze
   s.executables = ["zpng".freeze]
   s.extra_rdoc_files = [
@@ -44,7 +44,6 @@ Gem::Specification.new do |s|
     "lib/zpng/image.rb",
     "lib/zpng/metadata.rb",
     "lib/zpng/pixels.rb",
-    "lib/zpng/readable_struct.rb",
     "lib/zpng/scan_line.rb",
     "lib/zpng/scan_line/mixins.rb",
     "lib/zpng/string_ext.rb",
@@ -85,11 +84,13 @@ Gem::Specification.new do |s|
 
   if s.respond_to? :add_runtime_dependency then
     s.add_runtime_dependency(%q<rainbow>.freeze, ["~> 3.1.1"])
+    s.add_runtime_dependency(%q<iostruct>.freeze, [">= 0.0.5"])
     s.add_development_dependency(%q<rspec>.freeze, ["~> 3.11.0"])
     s.add_development_dependency(%q<rspec-its>.freeze, ["~> 1.3.0"])
     s.add_development_dependency(%q<juwelier>.freeze, ["~> 2.4.9"])
   else
     s.add_dependency(%q<rainbow>.freeze, ["~> 3.1.1"])
+    s.add_dependency(%q<iostruct>.freeze, [">= 0.0.5"])
     s.add_dependency(%q<rspec>.freeze, ["~> 3.11.0"])
     s.add_dependency(%q<rspec-its>.freeze, ["~> 1.3.0"])
     s.add_dependency(%q<juwelier>.freeze, ["~> 2.4.9"])

@@ -41,6 +41,7 @@ GEM
       oauth2 (~> 1.0)
     hashie (3.6.0)
     highline (2.0.3)
+    iostruct (0.0.5)
     juwelier (2.4.9)
       builder
       bundler
@@ -104,6 +105,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  iostruct (>= 0.0.5)
   juwelier (~> 2.4.9)
   rainbow (~> 3.1.1)
   rspec (~> 3.11.0)

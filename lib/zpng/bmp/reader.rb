@@ -1,7 +1,9 @@
+require 'iostruct'
+
 module ZPNG
   module BMP
 
-    class BITMAPFILEHEADER < ReadableStruct.new 'VvvV', #a2VvvV',
+    class BITMAPFILEHEADER < IOStruct.new 'VvvV', #a2VvvV',
       #:bfType,
       :bfSize,      # the size of the BMP file in bytes
       :bfReserved1,
@@ -13,7 +15,7 @@ module ZPNG
       end
     end
 
-    class BITMAPINFOHEADER < ReadableStruct.new 'V3v2V6',
+    class BITMAPINFOHEADER < IOStruct.new 'V3v2V6',
       :biSize,          # BITMAPINFOHEADER::SIZE
       :biWidth,
       :biHeight,
