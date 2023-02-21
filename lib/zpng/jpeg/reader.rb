@@ -109,11 +109,15 @@ module ZPNG
 
     class SOF2 < SOF
       attr_accessor :precision, :width, :height, :components
-      attr_accessor :color, :bpp # for compatibility with IHDR
+      attr_accessor :color # for compatibility with IHDR
 
       def initialize marker, io
         super
         @precision, @height, @width, @components = @data.unpack('CnnC')
+      end
+
+      def bpp
+        precision
       end
 
       def inspect *args
@@ -121,10 +125,25 @@ module ZPNG
       end
     end
 
+    class DHT < Chunk
+      attr_accessor :id, :lengths, :values
+
+      def initialize marker, io
+        super
+        @id, *@lengths = @data.unpack("CC16")
+        @values = @data.unpack("x17C" + @lengths.inject(:+).to_s)
+      end
+
+      def inspect verbose = 0
+        r = super.chop + ("id=%02x lengths=%s >" % [id, lengths.inspect])
+        r = r.chop + ("values=%s >" % [values.inspect]) if verbose > 0
+        r
+      end
+    end
+
     class SOS < Chunk; end
     class DRI < Chunk; end
     class DQT < Chunk; end
-    class DHT < Chunk; end
     class DAC < Chunk; end
 
     class COM < Chunk
