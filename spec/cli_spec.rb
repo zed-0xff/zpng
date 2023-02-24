@@ -1,8 +1,6 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '/spec_helper'))
 require 'zpng/cli'
 
-CLI_PATHNAME = File.expand_path(File.join(File.dirname(__FILE__), '/../bin/zpng'))
-
 describe "CLI" do
   PNGSuite.each_good do |fname|
     describe fname.sub(%r|\A#{Regexp::escape(Dir.getwd)}/?|, '') do
