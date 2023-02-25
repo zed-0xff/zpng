@@ -3,7 +3,7 @@ require 'stringio'
 
 module ZPNG
   class Image
-    attr_accessor :chunks, :scanlines, :imagedata, :extradata, :format, :verbose
+    attr_accessor :chunks, :scanlines, :extradata, :format, :verbose
 
     # now only for (limited) BMP support
     attr_accessor :color_class
@@ -75,6 +75,18 @@ module ZPNG
       end
       alias :load_file :load
       alias :from_file :load # as in ChunkyPNG
+
+      def from_rgb data, width:, height:
+        img = new(width: width, height: height, bpp: 24)
+        img.scanlines = height.times.map{ |i| ScanLine.new(img, i, decoded_bytes: data[width*3*i, width*3]) }
+        img
+      end
+
+      def from_rgba data, width:, height:
+        img = new(width: width, height: height, bpp: 32)
+        img.scanlines = height.times.map{ |i| ScanLine.new(img, i, decoded_bytes: data[width*4*i, width*4]) }
+        img
+      end
     end
 
     # save image to file
@@ -327,6 +339,11 @@ module ZPNG
           data = _imagedata
           (data && data.size > 0) ? _safe_inflate(data) : ''
         end
+    end
+
+    def imagedata= data
+      @scanlines = nil
+      @imagedata = data
     end
 
     def imagedata_size
