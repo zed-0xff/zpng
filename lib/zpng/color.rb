@@ -242,25 +242,32 @@ module ZPNG
     end
 
     # Op! op! op! Op!! Oppan Gangnam Style!!
-    def op op, c=nil
-      # XXX what to do with alpha?
+    def op op, c=nil, op2 = :&
+      # alpha is kept from 1st color
       max = 2**depth-1
       if c
         c = c.to_depth(depth)
         Color.new(
-          @r.send(op, c.r) & max,
-          @g.send(op, c.g) & max,
-          @b.send(op, c.b) & max,
-          :depth => self.depth
+          @r.send(op, c.r).send(op2, max),
+          @g.send(op, c.g).send(op2, max),
+          @b.send(op, c.b).send(op2, max),
+          depth: depth,
+          alpha: alpha
         )
       else
         Color.new(
-          @r.send(op) & max,
-          @g.send(op) & max,
-          @b.send(op) & max,
-          :depth => self.depth
+          @r.send(op).send(op2, max),
+          @g.send(op).send(op2, max),
+          @b.send(op).send(op2, max),
+          depth: depth,
+          alpha: alpha
         )
       end
+    end
+
+    # multiplies the pixel values of the upper layer with those of the layer below it and then divides the result by MAX_VALUE
+    def * c
+      op :*, c, :/
     end
 
     # for Array.uniq()
