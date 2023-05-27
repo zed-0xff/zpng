@@ -567,5 +567,14 @@ module ZPNG
 
       new_img
     end
+
+    # returns new image rotated 90 degrees clockwise
+    def rotated_90_cw
+      dst = Image.new(width: height, height: width, bpp: bpp)
+      each_pixel do |c,x,y|
+        dst[y,width-x-1] = c
+      end
+      dst
+    end
   end
 end
