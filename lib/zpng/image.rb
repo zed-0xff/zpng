@@ -429,6 +429,18 @@ module ZPNG
       end
     end
 
+    def to_ansi wide: false
+      spc = wide ? "  " : " "
+      r = String.new
+      height.times do |y|
+        width.times do |x|
+          r << spc.background(self[x,y].to_ansi)
+        end
+        r << "\n"
+      end
+      r
+    end
+
     def extract_block x,y=nil,w=nil,h=nil
       if x.is_a?(Hash)
         Block.new(self,x[:x], x[:y], x[:width], x[:height])
@@ -507,11 +519,12 @@ module ZPNG
     end
 
     # returns new image
-    def crop params
-      decode_all_scanlines
-      # deep copy first, then crop!
-      deep_copy.crop!(params)
+    def cropped x:, y:, width:, height:
+      dst = Image.new(width: width, height: height, bpp: bpp)
+      dst.copy_from(self, src_x: x, src_y: y, src_width: width, src_height: height)
+      dst
     end
+    alias crop cropped
 
     def pixels
       Pixels.new(self)
@@ -568,6 +581,27 @@ module ZPNG
       new_img
     end
 
+    def _normalize_rotate x
+      x = x.to_i
+      x %= 360
+      x += 360 if x < 0
+      raise "invalid rotate: #{x}" if x%90 != 0
+      x
+    end
+
+    # always returns a copy
+    def rotated degrees
+      degrees = _normalize_rotate(degrees)
+      return dup if degrees == 0
+
+      dst = self
+      while degrees > 0
+        dst = dst.rotated_90_cw
+        degrees -= 90
+      end
+      dst
+    end
+
     # returns new image rotated 90 degrees clockwise
     def rotated_90_cw
       dst = Image.new(width: height, height: width, bpp: bpp)
@@ -575,6 +609,59 @@ module ZPNG
         dst[y,width-x-1] = c
       end
       dst
+    end
+
+    def copy_from(src, copy_transparent: false,
+                  src_x: 0, src_y: 0, src_width: src.width, src_height: src.height,
+                  dst_x: 0, dst_y: 0, dst_width: src_width, dst_height: src_height)
+
+      dst_height.times do |iy|
+        dy = dst_y + iy
+        next if dy >= height
+        sy = src_y + iy * src_height / dst_height
+        next if sy >= src.height
+        dst_width.times do |ix|
+          dx = dst_x + ix
+          next if dx >= width
+          sx = src_x + ix * src_width / dst_width
+          next if sx >= src.width
+          c = src[sx,sy]
+          next if c.transparent? && !copy_transparent
+          self[dx,dy] = c
+        end
+      end
+      self
+    end
+
+    # op is a symbol of operation, like :+, :-, :* ...
+    def op_from(src, op,
+                  src_x: 0, src_y: 0, src_width: src.width, src_height: src.height,
+                  dst_x: 0, dst_y: 0, dst_width: src_width, dst_height: src_height)
+
+      dst_height.times do |iy|
+        dy = dst_y + iy
+        next if dy >= height
+        sy = src_y + iy * src_height / dst_height
+        next if sy >= src.height
+        dst_width.times do |ix|
+          dx = dst_x + ix
+          next if dx >= width
+          sx = src_x + ix * src_width / dst_width
+          next if sx >= src.width
+          c = src[sx,sy]
+          self[dx,dy] = self[dx,dy].send(op, c)
+        end
+      end
+      self
+    end
+
+    def scaled(x, y=x)
+      dst = Image.new(width: width*x, height: height*y, bpp: bpp)
+      dst.copy_from(self, dst_width: dst.width, dst_height: dst.height)
+    end
+
+    def empty?
+      pixels.all?(&:transparent?)
     end
   end
 end
