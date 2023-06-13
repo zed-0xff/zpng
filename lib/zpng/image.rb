@@ -519,10 +519,8 @@ module ZPNG
     end
 
     # returns new image
-    def cropped x:, y:, width:, height:
-      dst = Image.new(width: width, height: height, bpp: bpp)
-      dst.copy_from(self, src_x: x, src_y: y, src_width: width, src_height: height)
-      dst
+    def cropped **args
+      dup.crop!(**args)
     end
     alias crop cropped
 
@@ -655,9 +653,22 @@ module ZPNG
       self
     end
 
-    def scaled(x, y=x)
+    def scale(x, y=x)
       dst = Image.new(width: width*x, height: height*y, bpp: bpp)
       dst.copy_from(self, dst_width: dst.width, dst_height: dst.height)
+    end
+
+    alias scaled scale
+
+    def shear(mx, my)
+      src = self
+      dst = Image.new(width: width+(mx*height).abs, height: height+(my*width).abs, bpp: bpp)
+      xadd = mx < 0 ? src.height: 0
+      yadd = my < 0 ? src.width : 0
+      each_pixel do |c,x,y|
+        dst[xadd + (x+mx*y).to_i, yadd + (y+my*x).to_i] = c
+      end
+      dst
     end
 
     def empty?
