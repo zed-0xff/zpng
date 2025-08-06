@@ -21,7 +21,13 @@ module ZPNG
     #   IO      of opened image file
     #   String  with image file already readed
     #   Hash    of image parameters to create new blank image
+    #   width, height
     def initialize x, h={}
+      if x.is_a?(Numeric) && h.is_a?(Numeric)
+        x = { width: x, height: h }
+        h = {}
+      end
+
       @chunks = []
       @extradata = []
       @color_class = Color
@@ -604,7 +610,7 @@ module ZPNG
     def rotated_90_cw
       dst = Image.new(width: height, height: width, bpp: bpp)
       each_pixel do |c,x,y|
-        dst[y,width-x-1] = c
+        dst[height-y-1,x] = c
       end
       dst
     end
@@ -673,6 +679,38 @@ module ZPNG
 
     def empty?
       pixels.all?(&:transparent?)
+    end
+
+    def * value; op(:*, value); end
+    def / value; op(:/, value); end
+    def + value; op(:+, value); end
+    def - value; op(:-, value); end
+
+    def op op, value
+      case value
+      when Image
+        dst = Image.new(width: width, height: height, bpp: bpp)
+        each_pixel do |c,x,y|
+          dst[x,y] = c.send(op, value[x,y])
+        end
+        dst
+      when Color
+        dst = Image.new(width: width, height: height, bpp: bpp)
+        each_pixel do |c,x,y|
+          dst[x,y] = c.send(op, value)
+        end
+        dst
+      else
+        raise ArgumentError, "cannot #{op} Image by #{value}"
+      end
+    end
+
+    def divmul c1, c2
+      dst = Image.new(width: width, height: height, bpp: bpp)
+      each_pixel do |c,x,y|
+        dst[x,y] = c.divmul(c1, c2)
+      end
+      dst
     end
   end
 end

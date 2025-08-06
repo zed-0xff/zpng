@@ -6,6 +6,8 @@ module ZPNG
 
     include DeepCopyable
 
+    MAX_VALUES = 17.times.map{ |x| (2**x)-1 }.freeze
+
     def initialize *a
       h = a.last.is_a?(Hash) ? a.pop : {}
       @r,@g,@b,@a = *a
@@ -14,11 +16,15 @@ module ZPNG
       @depth       = h[:depth]       || 8
 
       # default ALPHA = 0xff - opaque
-      @a ||= h[:alpha] || h[:a] || (2**@depth-1)
+      @a ||= h[:alpha] || h[:a] || max_value
+    end
+
+    def max_value
+      MAX_VALUES[@depth]
     end
 
     def a= a
-      @a = a || (2**@depth-1)   # NULL alpha means fully opaque
+      @a = a || max_value   # NULL alpha means fully opaque
     end
     alias :alpha  :a
     alias :alpha= :a=
@@ -64,8 +70,7 @@ module ZPNG
     end
 
     def white?
-      max = 2**depth-1
-      r == max && g == max && b == max
+      r == max_value && g == max_value && b == max_value
     end
 
     def black?
@@ -77,7 +82,7 @@ module ZPNG
     end
 
     def opaque?
-      a.nil? || a == 2**depth-1
+      a.nil? || a == max_value
     end
 
     def to_grayscale
@@ -135,7 +140,7 @@ module ZPNG
     # try to convert to one pseudographics ASCII character
     def to_ascii map=ASCII_MAP
       #p self
-      map[self.to_grayscale*(map.size-1)/(2**@depth-1), 1]
+      map[self.to_grayscale*(map.size-1)/max_value, 1]
     end
 
     # convert to ANSI color name
@@ -162,7 +167,7 @@ module ZPNG
       color = Color.new :depth => new_depth
       if new_depth > self.depth
         %w'r g b a'.each do |part|
-          color.send("#{part}=", (2**new_depth-1)/(2**depth-1)*self.send(part))
+          color.send("#{part}=", (2**new_depth-1)/max_value*self.send(part))
         end
       else
         # new_depth < self.depth
@@ -242,23 +247,28 @@ module ZPNG
     end
 
     # Op! op! op! Op!! Oppan Gangnam Style!!
-    def op op, c=nil, op2 = :&
+    def op op, c=nil, op2=:&
       # alpha is kept from 1st color
-      max = 2**depth-1
       if c
         c = c.to_depth(depth)
         Color.new(
-          @r.send(op, c.r).send(op2, max),
-          @g.send(op, c.g).send(op2, max),
-          @b.send(op, c.b).send(op2, max),
+          @r.send(op, c.r).send(op2, max_value),
+          @g.send(op, c.g).send(op2, max_value),
+          @b.send(op, c.b).send(op2, max_value),
+#          [0, [@r.send(op, c.r), max_value].min].max,
+#          [0, [@g.send(op, c.g), max_value].min].max,
+#          [0, [@b.send(op, c.b), max_value].min].max,
           depth: depth,
           alpha: alpha
         )
       else
         Color.new(
-          @r.send(op).send(op2, max),
-          @g.send(op).send(op2, max),
-          @b.send(op).send(op2, max),
+          @r.send(op).send(op2, max_value),
+          @g.send(op).send(op2, max_value),
+          @b.send(op).send(op2, max_value),
+#          [0, [@r.send(op), max_value].min].max,
+#          [0, [@g.send(op), max_value].min].max,
+#          [0, [@b.send(op), max_value].min].max,
           depth: depth,
           alpha: alpha
         )
@@ -267,7 +277,64 @@ module ZPNG
 
     # multiplies the pixel values of the upper layer with those of the layer below it and then divides the result by MAX_VALUE
     def * c
-      op :*, c, :/
+      c = c.to_depth(depth)
+      Color.new(
+        (@r * c.r) / max_value,
+        (@g * c.g) / max_value,
+        (@b * c.b) / max_value,
+        depth: depth,
+        alpha: alpha
+      )
+    end
+
+    def / c
+      c = c.to_depth(depth)
+      Color.new(
+        [max_value, (max_value*@r/c.r)].min,
+        [max_value, (max_value*@g/c.g)].min,
+        [max_value, (max_value*@b/c.b)].min,
+#        (max_value*@r/c.r),
+#        (max_value*@g/c.g),
+#        (max_value*@b/c.b),
+        depth: depth,
+        alpha: alpha
+      )
+    rescue ZeroDivisionError
+      c = c.dup
+      c.r = 1 if c.r == 0 # XXX or it should be max_value ?
+      c.g = 1 if c.g == 0
+      c.b = 1 if c.b == 0
+      return Color.new(
+        [max_value, (max_value*@r/c.r)].min,
+        [max_value, (max_value*@g/c.g)].min,
+        [max_value, (max_value*@b/c.b)].min,
+        depth: depth,
+        alpha: alpha
+      )
+    end
+
+    def divmul c1, c2
+      c1 = c1.to_depth(depth)
+      c2 = c2.to_depth(depth)
+      Color.new(
+        [max_value, (c2.r*@r/c1.r)].min,
+        [max_value, (c2.g*@g/c1.g)].min,
+        [max_value, (c2.b*@b/c1.b)].min,
+        depth: depth,
+        alpha: alpha
+      )
+    end
+
+    # http://www.pegtop.net/delphi/articles/blendmodes/screen.htm
+    def screen c
+      c = c.to_depth(depth)
+      Color.new(
+        max_value - (((max_value-@r) * (max_value-c.r)) >> depth),
+        max_value - (((max_value-@g) * (max_value-c.g)) >> depth),
+        max_value - (((max_value-@b) * (max_value-c.b)) >> depth),
+        depth: depth,
+        alpha: alpha
+      )
     end
 
     # for Array.uniq()
