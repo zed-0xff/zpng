@@ -41,7 +41,7 @@ module ZPNG
       # BYTE Ydensity[2];     /* 0Ch  Vertical Resolution       */
       # BYTE XThumbnail;      /* 0Eh  Horizontal Pixel Count    */
       # BYTE YThumbnail;      /* 0Fh  Vertical Pixel Count      */
-      class JFIF < IOStruct.new( 'vcnncc', :version, :units, :xdensity, :ydensity, :xthumbnail, :ythumbnail )
+      class JFIF < IOStruct.new( 'vCnnCC', :version, :units, :xdensity, :ydensity, :xthumbnail, :ythumbnail )
         def inspect *args
           r = "<" + super.split(' ',3).last
           r.sub!(/version=\d+/, "version=#{version >> 8}.#{version & 0xff}") if version

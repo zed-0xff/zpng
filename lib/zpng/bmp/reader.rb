@@ -6,22 +6,22 @@ module ZPNG
 
     MAGIC = "BM"
 
-    class BITMAPFILEHEADER < IOStruct.new 'VvvV', #a2VvvV',
-      #:bfType,
-      :bfSize,      # the size of the BMP file in bytes
+    class BITMAPFILEHEADER < IOStruct.new 'VvvV',
+      #:bfType,         # read separately as magic bytes
+      :bfSize,          # the size of the BMP file in bytes
       :bfReserved1,
       :bfReserved2,
-      :bfOffBits    # imagedata offset
+      :bfOffBits        # imagedata offset
 
       def inspect
         "<" + super.partition(self.class.to_s.split('::').last)[1..-1].join
       end
     end
 
-    class BITMAPINFOHEADER < IOStruct.new 'V3v2V6',
+    class BITMAPINFOHEADER < IOStruct.new 'Vl2v2V2l2V2',  # l2 for signed width/height and pels/meter
       :biSize,          # BITMAPINFOHEADER::SIZE
-      :biWidth,
-      :biHeight,
+      :biWidth,         # can be negative for top-down DIB
+      :biHeight,        # can be negative for top-down DIB
       :biPlanes,
       :biBitCount,
       :biCompression,
