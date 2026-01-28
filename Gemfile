@@ -3,7 +3,7 @@ source "http://rubygems.org"
 # Example:
 #   gem "activesupport", ">= 2.3.5"
 gem 'rainbow', '~> 3.1.1'
-gem "iostruct", ">= 0.0.5"
+gem "iostruct", ">= 0.7.0"
 
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.

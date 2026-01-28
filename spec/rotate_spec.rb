@@ -31,7 +31,7 @@ describe Image do
         src = Image.load(ROTATE_SAMPLE)
         src2 = Image.load(ROTATE_SAMPLE)
         dst = src.rotated(angle)
-        dst.save("#{angle}.png")
+        dst.save(File.join(SAMPLES_DIR, "captcha_4bpp_rotated#{angle}.png"))
 
         if angle % 180 == 0
           dst.width.should  == src.width
