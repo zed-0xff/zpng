@@ -39,6 +39,13 @@ module ZPNG
         opts.on("-P", "--palette", "Show palette"){ @actions << :palette }
         opts.on(      "--colors", "Show colors used"){ @actions << :colors }
 
+        opts.on("-p", "--pixels[=FMT]", "Show all pixels (fmt: %x,%y,%argb,%rgba,%r,%g,%b,%R,%G,%B,%bname,%fname)", "Default: %x,%y,%rgba") do |fmt|
+          @actions << [:pixels, fmt]
+        end
+        opts.on("-n", "--nontransparent-pixels[=FMT]", "Show only nontransparent pixels") do |fmt|
+          @actions << [:nontransparent_pixels, fmt]
+        end
+
         opts.on "-E", "--extract-chunk ID", Integer, "extract a single chunk" do |id|
           @actions << [:extract_chunk, id]
         end
@@ -104,7 +111,8 @@ module ZPNG
 
         @actions.each do |action|
           if action.is_a?(Array)
-            self.send(*action) if self.respond_to?(action.first)
+            meth, *args = action
+            self.send(meth, *args) if self.respond_to?(meth)
           else
             self.send(action) if self.respond_to?(action)
           end
@@ -319,6 +327,69 @@ module ZPNG
         end
         puts
       end
+    end
+
+    PIXELS_DEFAULT_FMT = "%x,%y,%rgba"
+
+    def pixels(fmt = nil)
+      each_pixel_with_fmt(fmt, transparent: false) { |line| puts line }
+    end
+
+    def nontransparent_pixels(fmt = nil)
+      each_pixel_with_fmt(fmt, transparent: true) { |line| puts line }
+    end
+
+    def each_pixel_with_fmt(fmt, transparent:)
+      fmt = fmt || PIXELS_DEFAULT_FMT
+      @img.each_pixel do |c, x, y|
+        next if transparent && c.transparent?
+        yield format_pixel_line(c, x, y, fmt)
+      end
+    end
+
+    PIXEL_FMT_SPECS = [
+      ["%argb", ->(c, x, y, bname, fname) { "%02x%02x%02x%02x" % [c.a||0, c.r||0, c.g||0, c.b||0] }],
+      ["%rgba", ->(c, x, y, bname, fname) { "%02x%02x%02x%02x" % [c.r||0, c.g||0, c.b||0, c.a||0] }],
+      ["%bname", ->(c, x, y, bname, fname) { bname }],
+      ["%fname", ->(c, x, y, bname, fname) { fname }],
+      ["%x", ->(c, x, y, bname, fname) { x.to_s }],
+      ["%y", ->(c, x, y, bname, fname) { y.to_s }],
+      ["%r", ->(c, x, y, bname, fname) { "%02x" % (c.r||0) }],
+      ["%g", ->(c, x, y, bname, fname) { "%02x" % (c.g||0) }],
+      ["%b", ->(c, x, y, bname, fname) { "%02x" % (c.b||0) }],
+      ["%a", ->(c, x, y, bname, fname) { "%02x" % (c.a||0) }],
+      ["%R", ->(c, x, y, bname, fname) { (c.r||0).to_s }],
+      ["%G", ->(c, x, y, bname, fname) { (c.g||0).to_s }],
+      ["%B", ->(c, x, y, bname, fname) { (c.b||0).to_s }],
+      ["%A", ->(c, x, y, bname, fname) { (c.a||0).to_s }],
+    ].freeze
+
+    def format_pixel_line(c, x, y, fmt)
+      bname = File.basename(@fname.to_s, File.extname(@fname.to_s))
+      fname = @fname.to_s
+      out = +""
+      i = 0
+      while i < fmt.length
+        if fmt[i] == "%" && i + 1 < fmt.length
+          if fmt[i + 1] == "%"
+            out << "%"
+            i += 2
+            next
+          end
+          spec = PIXEL_FMT_SPECS.find { |(tag, _)| fmt[i, tag.length] == tag }
+          if spec
+            out << spec[1].call(c, x, y, bname, fname)
+            i += spec[0].length
+          else
+            out << fmt[i, 2]
+            i += 2
+          end
+        else
+          out << fmt[i]
+          i += 1
+        end
+      end
+      out
     end
 
     def console

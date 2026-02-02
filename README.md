@@ -31,6 +31,10 @@ Usage
         -S, --scanlines                  Show scanlines info
         -P, --palette                    Show palette
             --colors                     Show colors used
+        -p, --pixels[=FMT]               Show all pixels (fmt: %x,%y,%argb,%rgba,%r,%g,%b,%R,%G,%B,%bname,%fname)
+                                         Default: %x,%y,%rgba
+        -n[FMT],                         Show only nontransparent pixels
+            --nontransparent-pixels
         -E, --extract-chunk ID           extract a single chunk
         -D, --imagedata                  dump unpacked Image Data (IDAT) chunk(s) to stdout
     
@@ -79,6 +83,7 @@ Usage
         86 d2 24 44 db c3 7a d8  d9 b6 08 18 03 a1 cf 39  |..$D..z........9| + 367 bytes
     
     [.] <Chunk #03 IEND size=     0, crc=ae426082 > CRC OK
+                                                          |                |
 
 ( add more `-v`'s for even more verbose output)
 
