@@ -40,7 +40,7 @@ module ZPNG
         %w'size type data crc'.each do |k|
           instance_variable_set "@#{k}", x[k.to_sym]
         end
-        if !@type && self.class.superclass == ZPNG::Chunk
+        if !@type && self.is_a?(ZPNG::Chunk) && self.class != ZPNG::Chunk # is subclass of Chunk?
           # guess @type from self class name, e.g. ZPNG::Chunk::IHDR => "IHDR"
           @type = self.class.to_s.split("::").last
         end

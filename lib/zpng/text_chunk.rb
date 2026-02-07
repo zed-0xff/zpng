@@ -33,9 +33,18 @@ module ZPNG
 
   class Chunk
     class TEXT < TextChunk
-      def initialize *args
+      def initialize x = {}
         super
-        @keyword,@text = data.unpack('Z*a*')
+        if data
+          @keyword,@text = data.unpack('Z*a*')
+        elsif x[:keyword] && x[:text]
+          @keyword = x[:keyword]
+          @text = x[:text]
+        end
+      end
+
+      def export_data
+        [@keyword, @text].pack('Z*a*')
       end
     end
 
