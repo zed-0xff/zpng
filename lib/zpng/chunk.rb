@@ -3,6 +3,8 @@ module ZPNG
     attr_accessor :size, :type, :data, :crc, :idx, :offset
 
     KNOWN_TYPES = %w'IHDR PLTE IDAT IEND cHRM gAMA iCCP sBIT sRGB bKGD hIST tRNS pHYs sPLT tIME iTXt tEXt zTXt'
+    KNOWN_TYPES_MAP = KNOWN_TYPES.map{ |t| [t.upcase, t] }.to_h
+
     VALID_SIZE_RANGE = 0..((2**31)-1)
 
     include DeepCopyable
@@ -42,7 +44,7 @@ module ZPNG
         end
         if !@type && self.is_a?(ZPNG::Chunk) && self.class != ZPNG::Chunk # is subclass of Chunk?
           # guess @type from self class name, e.g. ZPNG::Chunk::IHDR => "IHDR"
-          @type = self.class.to_s.split("::").last
+          @type = KNOWN_TYPES_MAP[self.class.to_s.split("::").last]
         end
         if !@size && @data
           # guess @size from @data
