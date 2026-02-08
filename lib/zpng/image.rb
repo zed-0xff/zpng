@@ -96,8 +96,13 @@ module ZPNG
     end
 
     # save image to file
-    def save fname, options={}
-      File.open(fname,"wb"){ |f| f << export(options) }
+    def save f, options={}
+      if f.is_a?(String)
+        fname = f
+        File.open(fname,"wb"){ |f| f << export(options) }
+      else
+        f << export(options)
+      end
     end
 
     # flag that image is just created, and NOT loaded from file
