@@ -26,7 +26,7 @@ GEM
       thread_safe (~> 0.3, >= 0.3.1)
     diff-lcs (1.6.2)
     drb (2.2.3)
-    erb (6.0.1)
+    erb (6.0.1.1)
     faraday (1.8.0)
       faraday-em_http (~> 1.0)
       faraday-em_synchrony (~> 1.0)
