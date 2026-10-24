@@ -59,9 +59,13 @@ module ZPNG
           @actions << [:crop, x]
         end
 
-        opts.on "-R", "--rebuild NEW_FILENAME", "rebuild image, useful in restoring borked images" do |x|
-          @actions << [:rebuild, x]
+        opts.on "-R", "--rebuild", "rebuild image, useful in restoring borked images (needs -o/--out)" do
+          @actions << :rebuild
         end
+        opts.on "-o", "--out FILE_OR_DIR", "output file, or a directory (keeps the input's basename)" do |x|
+          @options[:out] = x
+        end
+        opts.on("--strip-metadata", "Strip metadata chunks (tEXt, zTXt, iTXt, tIME)"){ @actions << :strip_metadata }
 
         opts.separator ""
         opts.on "-A", '--ascii', 'Try to convert image to ASCII (works best with monochrome images)' do
@@ -98,7 +102,19 @@ module ZPNG
         return
       end
 
-      @actions = DEFAULT_ACTIONS if @actions.empty?
+      if @actions.empty?
+        @actions = DEFAULT_ACTIONS
+      elsif @actions == [:strip_metadata]
+        # --strip-metadata alone: strip, then show the usual info on the stripped image
+        @actions += DEFAULT_ACTIONS
+      end
+
+      # --strip-metadata must run before --rebuild so the rebuilt image is the
+      # stripped one, no matter the order the flags were given on the command line
+      if @actions.include?(:strip_metadata) && @actions.include?(:rebuild)
+        @actions.delete(:strip_metadata)
+        @actions.insert(@actions.index(:rebuild), :strip_metadata)
+      end
 
       argv.each_with_index do |fname,idx|
         if argv.size > 1 && @options[:verbose] >= 0
@@ -149,8 +165,26 @@ module ZPNG
       print @img.export unless @actions.include?(:ascii)
     end
 
-    def rebuild fname
-      File.binwrite(fname, @img.export)
+    def rebuild
+      out = @options[:out]
+      unless out
+        STDERR.puts "[!] --rebuild requires -o/--out FILE_OR_DIR"
+        return
+      end
+      File.binwrite(outpath(out), @img.export)
+    end
+
+    def strip_metadata
+      @img.chunks.reject!{ |c| c.is_a?(TextChunk) || c.is_a?(Chunk::TIME) }
+      out = @options[:out]
+      return unless out
+      # if --rebuild is also given, it does the final save (with IDAT repacking)
+      return if @actions.include?(:rebuild)
+      File.binwrite(outpath(out), @img.export(:repack => false))
+    end
+
+    def outpath out
+      File.directory?(out) ? File.join(out, File.basename(@fname)) : out
     end
 
     def load_file fname

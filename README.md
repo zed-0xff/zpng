@@ -40,7 +40,9 @@ Usage
     
         -C, --crop GEOMETRY              crop image, {WIDTH}x{HEIGHT}+{X}+{Y},
                                          puts results on stdout unless --ascii given
-        -R, --rebuild NEW_FILENAME       rebuild image, useful in restoring borked images
+        -R, --rebuild                    rebuild image, useful in restoring borked images (needs -o/--out)
+        -o, --out FILE_OR_DIR            output file, or a directory (keeps the input's basename)
+            --strip-metadata             strip metadata chunks (tEXt, zTXt, iTXt, tIME) before saving
     
         -A, --ascii                      Try to convert image to ASCII (works best with monochrome images)
             --ascii-string STRING        Use specific string to map pixels to ASCII characters
